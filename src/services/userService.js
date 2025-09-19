@@ -53,7 +53,7 @@ class UserService {
     try {
       // Find user by email or username
       const user = await userRepository.findByEmailOrUsername(identifier, true);
-
+      
       if (!user) {
         throw new ApiError("Invalid credentials", 401);
       }
@@ -77,6 +77,7 @@ class UserService {
       // Verify password
       const isPasswordValid = await user.comparePassword(password);
 
+      console.log("Found user:", isPasswordValid);
       if (!isPasswordValid) {
         await user.incLoginAttempts();
         throw new ApiError("Invalid credentials", 401);
