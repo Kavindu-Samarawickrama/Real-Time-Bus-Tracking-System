@@ -144,14 +144,9 @@ const userSchema = new mongoose.Schema(
 );
 
 // Indexes for better performance
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
 userSchema.index({ role: 1, status: 1 });
-userSchema.index(
-  { "organizationDetails.operatorLicense": 1 },
-  { sparse: true }
-);
-userSchema.index({ "organizationDetails.employeeId": 1 }, { sparse: true });
+userSchema.index({ "profile.address.province": 1 });
+userSchema.index({ createdAt: -1 });
 
 // Virtual for account lock status
 userSchema.virtual("isLocked").get(function () {
