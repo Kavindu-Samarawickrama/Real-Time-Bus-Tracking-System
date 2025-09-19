@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  ntc-api:
+    build: .
+    container_name: ntc-bus-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongo:27017/ntc-bus-tracking
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_EXPIRES_IN=24h
+      - BCRYPT_ROUNDS=12
+      - API_VERSION=v1
+      - RATE_LIMIT_WINDOW=15
+      - RATE_LIMIT_MAX=100
+    depends_on:
+      - mongo
+    networks:
+      - ntc-network
+    volumes:
+      - ./logs:/usr/src/app/logs
+
+  mongo:
+    image: mongo:6.0
+    container_name: ntc-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=ntc-bus-tracking
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    networks:
+      - ntc-network
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: ntc-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=
+    depends_on:
+      - mongo
+    networks:
+      - ntc-network
+
+networks:
+  ntc-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
