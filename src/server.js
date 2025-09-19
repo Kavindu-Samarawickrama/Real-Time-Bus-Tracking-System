@@ -67,10 +67,6 @@ class Server {
     // Compression middleware
     this.app.use(compression());
 
-    // Security cleaning middleware
-    this.app.use(mongoSanitization);
-    this.app.use(xssClean);
-
     // Rate limiting
     this.app.use(generalLimiter);
 

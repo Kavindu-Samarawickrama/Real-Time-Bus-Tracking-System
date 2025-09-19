@@ -98,12 +98,6 @@ const helmetOptions = {
   },
 };
 
-// XSS protection
-const xssClean = () => xss();
-
-// NoSQL injection protection
-const mongoSanitization = () => mongoSanitize();
-
 // Custom security middleware
 const customSecurityHeaders = (req, res, next) => {
   res.setHeader("X-API-Version", process.env.API_VERSION || "v1");
@@ -117,8 +111,6 @@ module.exports = {
   generalLimiter,
   authLimiter,
   strictLimiter,
-  xssClean,
-  mongoSanitization,
   customSecurityHeaders,
   createRateLimiter,
 };

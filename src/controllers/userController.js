@@ -18,6 +18,7 @@ class UserController {
    */
   async register(req, res, next) {
     try {
+      console.log("Register request body:");
       const validatedData = await validateSchema(registerSchema, req.body);
 
       // Remove confirmPassword from data

@@ -10,7 +10,7 @@ class Database {
   async connect() {
     try {
       const mongoUri = process.env.MONGODB_URI;
-
+      console.log("Connecting to MongoDB with URI:", mongoUri);
       if (!mongoUri) {
         throw new Error("MONGODB_URI is not defined in environment variables");
       }
