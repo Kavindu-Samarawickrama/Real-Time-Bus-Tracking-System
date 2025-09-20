@@ -56,6 +56,92 @@ class RouteController {
         throw new ApiError("Invalid route ID format", 400);
       }
 
+      const route = await routeService.getRouteById(routeId);
+
+      res.json(successResponse(route, "Route retrieved successfully"));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get route by route number
+   */
+  async getRouteByNumber(req, res, next) {
+    try {
+      const { routeNumber } = req.params;
+
+      if (!routeNumber || routeNumber.trim().length === 0) {
+        throw new ApiError("Route number is required", 400);
+      }
+
+      const route = await routeService.getRouteByNumber(routeNumber.trim());
+
+      res.json(successResponse(route, "Route retrieved successfully"));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Update route
+   */
+  async updateRoute(req, res, next) {
+    try {
+      const { routeId } = req.params;
+
+      if (!routeId.match(/^[0-9a-fA-F]{24}$/)) {
+        throw new ApiError("Invalid route ID format", 400);
+      }
+
+      const validatedData = await validateSchema(updateRouteSchema, req.body);
+
+      // Check permissions
+      await routeService.validateRoutePermissions(req.user.id, routeId, 'update');
+
+      const route = await routeService.updateRoute(routeId, validatedData, req.user.id);
+
+      res.json(successResponse(route, "Route updated successfully"));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Update route status
+   */
+  async updateRouteStatus(req, res, next) {
+    try {
+      const { routeId } = req.params;
+
+      if (!routeId.match(/^[0-9a-fA-F]{24}$/)) {
+        throw new ApiError("Invalid route ID format", 400);
+      }
+
+      const { status, reason } = await validateSchema(updateStatusSchema, req.body);
+
+      // Check permissions
+      await routeService.validateRoutePermissions(req.user.id, routeId, 'update');
+
+      const route = await routeService.updateRouteStatus(routeId, status, reason, req.user.id);
+
+      res.json(successResponse(route, "Route status updated successfully"));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Delete route
+   */
+  async deleteRoute(req, res, next) {
+    try {
+      const { routeId } = req.params;
+
+      if (!routeId.match(/^[0-9a-fA-F]{24}$/)) {
+        throw new ApiError("Invalid route ID format", 400);
+      }
+
       // Check permissions
       await routeService.validateRoutePermissions(req.user.id, routeId, 'delete');
 
