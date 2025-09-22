@@ -1650,6 +1650,991 @@ const openapiSpecification = {
           },
         },
       },
+      Trip: {
+        type: "object",
+        properties: {
+          _id: { type: "string", description: "Trip ID" },
+          tripNumber: {
+            type: "string",
+            description: "Unique trip number (format: TRP-YYYYMMDD-XXX)",
+            pattern: "^TRP-\\d{8}-\\d{3}$",
+          },
+          route: {
+            type: "string",
+            description: "Route ID (reference to Route)",
+          },
+          bus: { type: "string", description: "Bus ID (reference to Bus)" },
+          operator: {
+            type: "string",
+            description: "Operator ID (reference to User)",
+          },
+          schedule: {
+            type: "object",
+            properties: {
+              scheduledDeparture: { type: "string", format: "date-time" },
+              scheduledArrival: { type: "string", format: "date-time" },
+              estimatedDeparture: {
+                type: "string",
+                format: "date-time",
+                nullable: true,
+              },
+              estimatedArrival: {
+                type: "string",
+                format: "date-time",
+                nullable: true,
+              },
+              actualDeparture: {
+                type: "string",
+                format: "date-time",
+                nullable: true,
+              },
+              actualArrival: {
+                type: "string",
+                format: "date-time",
+                nullable: true,
+              },
+            },
+          },
+          crew: {
+            type: "object",
+            properties: {
+              driver: {
+                type: "object",
+                properties: {
+                  name: { type: "string", maxLength: 100 },
+                  licenseNumber: { type: "string" },
+                  contactNumber: {
+                    type: "string",
+                    pattern: "^(\\+94|0)[0-9]{9}$",
+                    description: "Sri Lankan phone number",
+                  },
+                },
+              },
+              conductor: {
+                type: "object",
+                properties: {
+                  name: { type: "string", maxLength: 100, nullable: true },
+                  contactNumber: {
+                    type: "string",
+                    pattern: "^(\\+94|0)[0-9]{9}$",
+                    nullable: true,
+                    description: "Sri Lankan phone number",
+                  },
+                },
+                nullable: true,
+              },
+            },
+          },
+          capacity: {
+            type: "object",
+            properties: {
+              totalSeats: { type: "integer", minimum: 10 },
+              bookedSeats: { type: "integer", minimum: 0 },
+              availableSeats: { type: "integer", minimum: 0 },
+              standingPassengers: { type: "integer", minimum: 0 },
+            },
+          },
+          status: {
+            type: "string",
+            enum: [
+              "scheduled",
+              "boarding",
+              "departed",
+              "in_transit",
+              "delayed",
+              "arrived",
+              "completed",
+              "cancelled",
+            ],
+          },
+          tracking: {
+            type: "object",
+            properties: {
+              currentLocation: {
+                type: "object",
+                properties: {
+                  coordinates: {
+                    type: "object",
+                    properties: {
+                      latitude: { type: "number", minimum: 5.9, maximum: 9.9 },
+                      longitude: {
+                        type: "number",
+                        minimum: 79.6,
+                        maximum: 81.9,
+                      },
+                    },
+                  },
+                  address: { type: "string", nullable: true },
+                  lastUpdated: {
+                    type: "string",
+                    format: "date-time",
+                    nullable: true,
+                  },
+                },
+              },
+              speed: { type: "number", minimum: 0, maximum: 120 },
+              heading: { type: "number", minimum: 0, maximum: 359 },
+              distanceFromOrigin: { type: "number", minimum: 0 },
+              distanceToDestination: {
+                type: "number",
+                minimum: 0,
+                nullable: true,
+              },
+              nextWaypoint: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  estimatedArrival: { type: "string", format: "date-time" },
+                  distanceAway: { type: "number" },
+                },
+                nullable: true,
+              },
+            },
+          },
+          waypoints: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                waypointRef: { type: "string", description: "Waypoint ID" },
+                name: { type: "string" },
+                scheduledArrival: { type: "string", format: "date-time" },
+                scheduledDeparture: { type: "string", format: "date-time" },
+                estimatedArrival: {
+                  type: "string",
+                  format: "date-time",
+                  nullable: true,
+                },
+                estimatedDeparture: {
+                  type: "string",
+                  format: "date-time",
+                  nullable: true,
+                },
+                actualArrival: {
+                  type: "string",
+                  format: "date-time",
+                  nullable: true,
+                },
+                actualDeparture: {
+                  type: "string",
+                  format: "date-time",
+                  nullable: true,
+                },
+                status: {
+                  type: "string",
+                  enum: [
+                    "pending",
+                    "approaching",
+                    "arrived",
+                    "departed",
+                    "skipped",
+                  ],
+                },
+                passengerActivity: {
+                  type: "object",
+                  properties: {
+                    boarded: { type: "integer", minimum: 0 },
+                    alighted: { type: "integer", minimum: 0 },
+                  },
+                },
+              },
+            },
+          },
+          fare: {
+            type: "object",
+            properties: {
+              baseFare: { type: "number", minimum: 0 },
+              currency: { type: "string", enum: ["LKR"] },
+              discounts: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    type: {
+                      type: "string",
+                      enum: ["student", "senior", "disabled", "promotional"],
+                    },
+                    percentage: { type: "number", minimum: 0, maximum: 100 },
+                    amount: { type: "number", minimum: 0 },
+                  },
+                },
+              },
+            },
+          },
+          revenue: {
+            type: "object",
+            properties: {
+              totalRevenue: { type: "number", minimum: 0 },
+              ticketsSold: { type: "integer", minimum: 0 },
+              averageFare: { type: "number", minimum: 0 },
+              expenses: {
+                type: "object",
+                properties: {
+                  fuel: { type: "number", minimum: 0 },
+                  toll: { type: "number", minimum: 0 },
+                  maintenance: { type: "number", minimum: 0 },
+                  other: { type: "number", minimum: 0 },
+                },
+              },
+            },
+          },
+          weather: {
+            type: "object",
+            properties: {
+              conditions: {
+                type: "string",
+                enum: ["clear", "cloudy", "rainy", "stormy", "foggy"],
+                nullable: true,
+              },
+              temperature: { type: "number", nullable: true },
+              visibility: { type: "number", nullable: true },
+            },
+          },
+          incidents: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                timestamp: { type: "string", format: "date-time" },
+                type: {
+                  type: "string",
+                  enum: [
+                    "breakdown",
+                    "accident",
+                    "traffic_jam",
+                    "road_closure",
+                    "passenger_incident",
+                    "fuel_shortage",
+                    "other",
+                  ],
+                },
+                description: { type: "string", maxLength: 500 },
+                location: {
+                  type: "object",
+                  properties: {
+                    coordinates: {
+                      type: "object",
+                      properties: {
+                        latitude: { type: "number" },
+                        longitude: { type: "number" },
+                      },
+                    },
+                    address: { type: "string", nullable: true },
+                  },
+                },
+                severity: {
+                  type: "string",
+                  enum: ["low", "medium", "high", "critical"],
+                },
+                resolved: { type: "boolean" },
+                resolvedAt: {
+                  type: "string",
+                  format: "date-time",
+                  nullable: true,
+                },
+                reportedBy: { type: "string", description: "User ID" },
+              },
+            },
+          },
+          notifications: {
+            type: "object",
+            properties: {
+              passengerAlerts: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    type: {
+                      type: "string",
+                      enum: [
+                        "delay",
+                        "route_change",
+                        "cancellation",
+                        "boarding",
+                        "arrival",
+                      ],
+                    },
+                    message: { type: "string" },
+                    timestamp: { type: "string", format: "date-time" },
+                    sent: { type: "boolean" },
+                  },
+                },
+              },
+            },
+          },
+          ratings: {
+            type: "object",
+            properties: {
+              overall: {
+                type: "number",
+                minimum: 1,
+                maximum: 5,
+                nullable: true,
+              },
+              punctuality: {
+                type: "number",
+                minimum: 1,
+                maximum: 5,
+                nullable: true,
+              },
+              comfort: {
+                type: "number",
+                minimum: 1,
+                maximum: 5,
+                nullable: true,
+              },
+              driverBehavior: {
+                type: "number",
+                minimum: 1,
+                maximum: 5,
+                nullable: true,
+              },
+              cleanliness: {
+                type: "number",
+                minimum: 1,
+                maximum: 5,
+                nullable: true,
+              },
+              totalRatings: { type: "integer", minimum: 0 },
+              reviews: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    user: { type: "string", description: "User ID" },
+                    rating: { type: "number", minimum: 1, maximum: 5 },
+                    comment: { type: "string", nullable: true },
+                    timestamp: { type: "string", format: "date-time" },
+                  },
+                },
+              },
+            },
+          },
+          metadata: {
+            type: "object",
+            properties: {
+              tripType: {
+                type: "string",
+                enum: ["regular", "express", "luxury", "special"],
+              },
+              repeatPattern: {
+                type: "string",
+                enum: ["one_time", "daily", "weekly", "monthly"],
+              },
+              parentTrip: {
+                type: "string",
+                description: "Parent trip ID",
+                nullable: true,
+              },
+              tags: { type: "array", items: { type: "string" } },
+              priority: {
+                type: "string",
+                enum: ["low", "normal", "high", "urgent"],
+              },
+            },
+          },
+          createdBy: { type: "string", description: "User ID of creator" },
+          lastModifiedBy: {
+            type: "string",
+            description: "User ID of last modifier",
+            nullable: true,
+          },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+          duration: {
+            type: "integer",
+            description: "Trip duration in minutes",
+            nullable: true,
+          },
+          occupancyPercentage: {
+            type: "integer",
+            description: "Occupancy percentage",
+          },
+          delay: { type: "integer", description: "Delay in minutes" },
+          progressPercentage: {
+            type: "integer",
+            description: "Trip progress percentage",
+          },
+        },
+      },
+      CreateTripRequest: {
+        type: "object",
+        required: [
+          "route",
+          "bus",
+          "operator",
+          "schedule",
+          "crew",
+          "capacity",
+          "fare",
+        ],
+        properties: {
+          route: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          bus: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          operator: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          schedule: {
+            type: "object",
+            required: ["scheduledDeparture", "scheduledArrival"],
+            properties: {
+              scheduledDeparture: { type: "string", format: "date-time" },
+              scheduledArrival: { type: "string", format: "date-time" },
+            },
+          },
+          crew: {
+            type: "object",
+            required: ["driver"],
+            properties: {
+              driver: {
+                type: "object",
+                required: ["name", "licenseNumber", "contactNumber"],
+                properties: {
+                  name: { type: "string", maxLength: 100 },
+                  licenseNumber: { type: "string" },
+                  contactNumber: {
+                    type: "string",
+                    pattern: "^(\\+94|0)[0-9]{9}$",
+                  },
+                },
+              },
+              conductor: {
+                type: "object",
+                properties: {
+                  name: { type: "string", maxLength: 100 },
+                  contactNumber: {
+                    type: "string",
+                    pattern: "^(\\+94|0)[0-9]{9}$",
+                  },
+                },
+              },
+            },
+          },
+          capacity: {
+            type: "object",
+            required: ["totalSeats"],
+            properties: {
+              totalSeats: { type: "integer", minimum: 10 },
+              bookedSeats: { type: "integer", minimum: 0, default: 0 },
+              standingPassengers: { type: "integer", minimum: 0, default: 0 },
+            },
+          },
+          fare: {
+            type: "object",
+            required: ["baseFare"],
+            properties: {
+              baseFare: { type: "number", minimum: 0 },
+              currency: { type: "string", enum: ["LKR"], default: "LKR" },
+              discounts: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    type: {
+                      type: "string",
+                      enum: ["student", "senior", "disabled", "promotional"],
+                    },
+                    percentage: { type: "number", minimum: 0, maximum: 100 },
+                    amount: { type: "number", minimum: 0 },
+                  },
+                },
+              },
+            },
+          },
+          metadata: {
+            type: "object",
+            properties: {
+              tripType: {
+                type: "string",
+                enum: ["regular", "express", "luxury", "special"],
+                default: "regular",
+              },
+              repeatPattern: {
+                type: "string",
+                enum: ["one_time", "daily", "weekly", "monthly"],
+                default: "one_time",
+              },
+              tags: { type: "array", items: { type: "string" } },
+              priority: {
+                type: "string",
+                enum: ["low", "normal", "high", "urgent"],
+                default: "normal",
+              },
+            },
+          },
+        },
+      },
+      UpdateTripRequest: {
+        type: "object",
+        properties: {
+          schedule: {
+            type: "object",
+            properties: {
+              scheduledDeparture: { type: "string", format: "date-time" },
+              scheduledArrival: { type: "string", format: "date-time" },
+              estimatedDeparture: {
+                type: "string",
+                format: "date-time",
+                nullable: true,
+              },
+              estimatedArrival: {
+                type: "string",
+                format: "date-time",
+                nullable: true,
+              },
+            },
+          },
+          crew: {
+            type: "object",
+            properties: {
+              driver: {
+                type: "object",
+                properties: {
+                  name: { type: "string", maxLength: 100 },
+                  licenseNumber: { type: "string" },
+                  contactNumber: {
+                    type: "string",
+                    pattern: "^(\\+94|0)[0-9]{9}$",
+                  },
+                },
+              },
+              conductor: {
+                type: "object",
+                properties: {
+                  name: { type: "string", maxLength: 100 },
+                  contactNumber: {
+                    type: "string",
+                    pattern: "^(\\+94|0)[0-9]{9}$",
+                  },
+                },
+              },
+            },
+          },
+          capacity: {
+            type: "object",
+            properties: {
+              totalSeats: { type: "integer", minimum: 10 },
+              bookedSeats: { type: "integer", minimum: 0 },
+              standingPassengers: { type: "integer", minimum: 0 },
+            },
+          },
+          fare: {
+            type: "object",
+            properties: {
+              baseFare: { type: "number", minimum: 0 },
+              currency: { type: "string", enum: ["LKR"] },
+              discounts: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    type: {
+                      type: "string",
+                      enum: ["student", "senior", "disabled", "promotional"],
+                    },
+                    percentage: { type: "number", minimum: 0, maximum: 100 },
+                    amount: { type: "number", minimum: 0 },
+                  },
+                },
+              },
+            },
+          },
+          metadata: {
+            type: "object",
+            properties: {
+              tripType: {
+                type: "string",
+                enum: ["regular", "express", "luxury", "special"],
+              },
+              repeatPattern: {
+                type: "string",
+                enum: ["one_time", "daily", "weekly", "monthly"],
+              },
+              tags: { type: "array", items: { type: "string" } },
+              priority: {
+                type: "string",
+                enum: ["low", "normal", "high", "urgent"],
+              },
+            },
+          },
+        },
+        minProperties: 1,
+      },
+      UpdateStatusRequest: {
+        type: "object",
+        required: ["status"],
+        properties: {
+          status: {
+            type: "string",
+            enum: [
+              "scheduled",
+              "boarding",
+              "departed",
+              "in_transit",
+              "delayed",
+              "arrived",
+              "completed",
+              "cancelled",
+            ],
+          },
+          updateData: {
+            type: "object",
+            properties: {
+              actualDeparture: { type: "string", format: "date-time" },
+              actualArrival: { type: "string", format: "date-time" },
+              estimatedDeparture: { type: "string", format: "date-time" },
+              estimatedArrival: { type: "string", format: "date-time" },
+            },
+          },
+        },
+      },
+      UpdateLocationRequest: {
+        type: "object",
+        required: ["coordinates"],
+        properties: {
+          coordinates: {
+            type: "object",
+            required: ["latitude", "longitude"],
+            properties: {
+              latitude: { type: "number", minimum: 5.9, maximum: 9.9 },
+              longitude: { type: "number", minimum: 79.6, maximum: 81.9 },
+            },
+          },
+          address: { type: "string" },
+          speed: { type: "number", minimum: 0, maximum: 120 },
+          heading: { type: "number", minimum: 0, maximum: 359 },
+          distanceFromOrigin: { type: "number", minimum: 0 },
+          distanceToDestination: { type: "number", minimum: 0 },
+        },
+      },
+      LiveTrackingRequest: {
+        type: "object",
+        required: ["coordinates", "speed", "heading"],
+        properties: {
+          coordinates: {
+            type: "object",
+            required: ["latitude", "longitude"],
+            properties: {
+              latitude: { type: "number", minimum: 5.9, maximum: 9.9 },
+              longitude: { type: "number", minimum: 79.6, maximum: 81.9 },
+            },
+          },
+          speed: { type: "number", minimum: 0, maximum: 120 },
+          heading: { type: "number", minimum: 0, maximum: 359 },
+          timestamp: { type: "string", format: "date-time", default: "now" },
+        },
+      },
+      TripQueryRequest: {
+        type: "object",
+        properties: {
+          page: { type: "integer", minimum: 1, default: 1 },
+          limit: { type: "integer", minimum: 1, maximum: 100, default: 10 },
+          status: {
+            type: "string",
+            enum: [
+              "scheduled",
+              "boarding",
+              "departed",
+              "in_transit",
+              "delayed",
+              "arrived",
+              "completed",
+              "cancelled",
+            ],
+          },
+          route: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          bus: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          operator: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          dateFrom: { type: "string", format: "date-time" },
+          dateTo: { type: "string", format: "date-time" },
+          tripNumber: { type: "string", pattern: "^TRP-\\d{8}-\\d{3}$" },
+          sortBy: {
+            type: "string",
+            enum: [
+              "schedule.scheduledDeparture",
+              "tripNumber",
+              "capacity.bookedSeats",
+              "fare.baseFare",
+            ],
+            default: "schedule.scheduledDeparture",
+          },
+          sortOrder: { type: "string", enum: ["asc", "desc"], default: "asc" },
+        },
+      },
+      TripSearchRequest: {
+        type: "object",
+        properties: {
+          location: {
+            oneOf: [
+              { type: "string" },
+              {
+                type: "object",
+                properties: {
+                  latitude: { type: "number", minimum: 5.9, maximum: 9.9 },
+                  longitude: { type: "number", minimum: 79.6, maximum: 81.9 },
+                },
+              },
+            ],
+          },
+          radius: { type: "number", minimum: 1, maximum: 100, default: 50 },
+          status: {
+            type: "string",
+            enum: [
+              "scheduled",
+              "boarding",
+              "departed",
+              "in_transit",
+              "delayed",
+              "arrived",
+              "completed",
+              "cancelled",
+            ],
+          },
+          route: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          bus: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          operator: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          dateFrom: { type: "string", format: "date-time" },
+          dateTo: { type: "string", format: "date-time" },
+          minSeats: { type: "integer", minimum: 1 },
+          maxSeats: { type: "integer", minimum: 1 },
+          tripType: {
+            type: "string",
+            enum: ["regular", "express", "luxury", "special"],
+          },
+          page: { type: "integer", minimum: 1, default: 1 },
+          limit: { type: "integer", minimum: 1, maximum: 100, default: 10 },
+        },
+      },
+      IncidentRequest: {
+        type: "object",
+        required: ["type", "description"],
+        properties: {
+          type: {
+            type: "string",
+            enum: [
+              "breakdown",
+              "accident",
+              "traffic_jam",
+              "road_closure",
+              "passenger_incident",
+              "fuel_shortage",
+              "other",
+            ],
+          },
+          description: { type: "string", maxLength: 500 },
+          location: {
+            type: "object",
+            properties: {
+              coordinates: {
+                type: "object",
+                properties: {
+                  latitude: { type: "number" },
+                  longitude: { type: "number" },
+                },
+              },
+              address: { type: "string" },
+            },
+          },
+          severity: {
+            type: "string",
+            enum: ["low", "medium", "high", "critical"],
+            default: "medium",
+          },
+          timestamp: { type: "string", format: "date-time", default: "now" },
+        },
+      },
+      UpdateWaypointRequest: {
+        type: "object",
+        required: ["waypointRef", "status"],
+        properties: {
+          waypointRef: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          status: {
+            type: "string",
+            enum: ["pending", "approaching", "arrived", "departed", "skipped"],
+          },
+          estimatedArrival: { type: "string", format: "date-time" },
+          estimatedDeparture: { type: "string", format: "date-time" },
+          actualArrival: { type: "string", format: "date-time" },
+          actualDeparture: { type: "string", format: "date-time" },
+          passengerActivity: {
+            type: "object",
+            properties: {
+              boarded: { type: "integer", minimum: 0 },
+              alighted: { type: "integer", minimum: 0 },
+            },
+          },
+        },
+      },
+      PassengerActivityRequest: {
+        type: "object",
+        required: ["waypointRef", "passengerActivity"],
+        properties: {
+          waypointRef: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          passengerActivity: {
+            type: "object",
+            required: ["boarded", "alighted"],
+            properties: {
+              boarded: { type: "integer", minimum: 0 },
+              alighted: { type: "integer", minimum: 0 },
+            },
+          },
+        },
+      },
+      AddRatingRequest: {
+        type: "object",
+        required: ["rating"],
+        properties: {
+          rating: { type: "number", minimum: 1, maximum: 5 },
+          comment: { type: "string", maxLength: 500 },
+          punctuality: { type: "number", minimum: 1, maximum: 5 },
+          comfort: { type: "number", minimum: 1, maximum: 5 },
+          driverBehavior: { type: "number", minimum: 1, maximum: 5 },
+          cleanliness: { type: "number", minimum: 1, maximum: 5 },
+        },
+      },
+      UpdateRevenueRequest: {
+        type: "object",
+        properties: {
+          totalRevenue: { type: "number", minimum: 0 },
+          ticketsSold: { type: "integer", minimum: 0 },
+          averageFare: { type: "number", minimum: 0 },
+          expenses: {
+            type: "object",
+            properties: {
+              fuel: { type: "number", minimum: 0 },
+              toll: { type: "number", minimum: 0 },
+              maintenance: { type: "number", minimum: 0 },
+              other: { type: "number", minimum: 0 },
+            },
+          },
+        },
+        minProperties: 1,
+      },
+      GenerateScheduleRequest: {
+        type: "object",
+        required: [
+          "route",
+          "bus",
+          "operator",
+          "startDate",
+          "endDate",
+          "repeatPattern",
+        ],
+        properties: {
+          route: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          bus: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          operator: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          startDate: { type: "string", format: "date-time" },
+          endDate: { type: "string", format: "date-time" },
+          repeatPattern: {
+            type: "string",
+            enum: ["daily", "weekly", "monthly"],
+          },
+          schedule: {
+            type: "object",
+            required: ["departureTime", "duration"],
+            properties: {
+              departureTime: { type: "string", format: "time" },
+              duration: { type: "integer", minimum: 30 },
+            },
+          },
+          crew: {
+            type: "object",
+            properties: {
+              driver: {
+                type: "object",
+                properties: {
+                  name: { type: "string", maxLength: 100 },
+                  licenseNumber: { type: "string" },
+                  contactNumber: {
+                    type: "string",
+                    pattern: "^(\\+94|0)[0-9]{9}$",
+                  },
+                },
+              },
+              conductor: {
+                type: "object",
+                properties: {
+                  name: { type: "string", maxLength: 100 },
+                  contactNumber: {
+                    type: "string",
+                    pattern: "^(\\+94|0)[0-9]{9}$",
+                  },
+                },
+              },
+            },
+          },
+          fare: {
+            type: "object",
+            properties: {
+              baseFare: { type: "number", minimum: 0 },
+              currency: { type: "string", enum: ["LKR"], default: "LKR" },
+            },
+          },
+          metadata: {
+            type: "object",
+            properties: {
+              tripType: {
+                type: "string",
+                enum: ["regular", "express", "luxury", "special"],
+                default: "regular",
+              },
+              tags: { type: "array", items: { type: "string" } },
+              priority: {
+                type: "string",
+                enum: ["low", "normal", "high", "urgent"],
+                default: "normal",
+              },
+            },
+          },
+        },
+      },
+      BulkUpdateStatusRequest: {
+        type: "object",
+        required: ["tripIds", "status"],
+        properties: {
+          tripIds: {
+            type: "array",
+            items: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            minItems: 1,
+            maxItems: 50,
+          },
+          status: {
+            type: "string",
+            enum: [
+              "scheduled",
+              "boarding",
+              "departed",
+              "in_transit",
+              "delayed",
+              "arrived",
+              "completed",
+              "cancelled",
+            ],
+          },
+          reason: { type: "string", maxLength: 500 },
+        },
+      },
+      TripAnalyticsRequest: {
+        type: "object",
+        properties: {
+          operator: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          route: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          dateFrom: { type: "string", format: "date-time" },
+          dateTo: { type: "string", format: "date-time" },
+          status: {
+            type: "string",
+            enum: [
+              "scheduled",
+              "boarding",
+              "departed",
+              "in_transit",
+              "delayed",
+              "arrived",
+              "completed",
+              "cancelled",
+            ],
+          },
+        },
+      },
     },
   },
   paths: {
@@ -4827,6 +5812,1663 @@ const openapiSpecification = {
         },
       },
     },
+    "/trips": {
+      get: {
+        summary: "Get all trips with filters",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "page",
+            in: "query",
+            schema: { type: "integer", minimum: 1, default: 1 },
+            description: "Page number",
+          },
+          {
+            name: "limit",
+            in: "query",
+            schema: { type: "integer", minimum: 1, maximum: 100, default: 10 },
+            description: "Items per page",
+          },
+          {
+            name: "status",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: [
+                "scheduled",
+                "boarding",
+                "departed",
+                "in_transit",
+                "delayed",
+                "arrived",
+                "completed",
+                "cancelled",
+              ],
+            },
+            description: "Filter by trip status",
+          },
+          {
+            name: "route",
+            in: "query",
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Filter by route ID",
+          },
+          {
+            name: "bus",
+            in: "query",
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Filter by bus ID",
+          },
+          {
+            name: "operator",
+            in: "query",
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Filter by operator ID",
+          },
+          {
+            name: "dateFrom",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+            description: "Filter trips starting from this date",
+          },
+          {
+            name: "dateTo",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+            description: "Filter trips ending by this date",
+          },
+          {
+            name: "tripNumber",
+            in: "query",
+            schema: { type: "string", pattern: "^TRP-\\d{8}-\\d{3}$" },
+            description: "Filter by trip number",
+          },
+          {
+            name: "sortBy",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: [
+                "schedule.scheduledDeparture",
+                "tripNumber",
+                "capacity.bookedSeats",
+                "fare.baseFare",
+              ],
+              default: "schedule.scheduledDeparture",
+            },
+            description: "Sort field",
+          },
+          {
+            name: "sortOrder",
+            in: "query",
+            schema: { type: "string", enum: ["asc", "desc"], default: "asc" },
+            description: "Sort order",
+          },
+        ],
+        responses: {
+          200: {
+            description: "List of trips",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        trips: {
+                          type: "array",
+                          items: { $ref: "#/components/schemas/Trip" },
+                        },
+                        pagination: {
+                          type: "object",
+                          properties: {
+                            totalTrips: { type: "integer" },
+                            page: { type: "integer" },
+                            limit: { type: "integer" },
+                            totalPages: { type: "integer" },
+                          },
+                        },
+                      },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+      post: {
+        summary: "Create a new trip (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CreateTripRequest" },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: "Trip created successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Trip" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/active": {
+      get: {
+        summary: "Get active trips",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: "Active trips retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Trip" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/delayed": {
+      get: {
+        summary: "Get delayed trips (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "threshold",
+            in: "query",
+            schema: { type: "integer", minimum: 1, default: 15 },
+            description: "Delay threshold in minutes",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Delayed trips retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Trip" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid threshold",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/upcoming": {
+      get: {
+        summary: "Get upcoming trips",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "hours",
+            in: "query",
+            schema: { type: "integer", minimum: 1, maximum: 168, default: 24 },
+            description: "Time window in hours",
+          },
+          {
+            name: "limit",
+            in: "query",
+            schema: { type: "integer", minimum: 1, maximum: 100, default: 50 },
+            description: "Maximum number of trips",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Upcoming trips retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Trip" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid parameters",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/search/nearby": {
+      get: {
+        summary: "Find nearby trips",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "latitude",
+            in: "query",
+            required: true,
+            schema: { type: "number", minimum: 5.9, maximum: 9.9 },
+            description: "Latitude within Sri Lanka bounds",
+          },
+          {
+            name: "longitude",
+            in: "query",
+            required: true,
+            schema: { type: "number", minimum: 79.6, maximum: 81.9 },
+            description: "Longitude within Sri Lanka bounds",
+          },
+          {
+            name: "radius",
+            in: "query",
+            schema: { type: "number", minimum: 1, maximum: 100, default: 50 },
+            description: "Search radius in kilometers",
+          },
+          {
+            name: "status",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: [
+                "scheduled",
+                "boarding",
+                "departed",
+                "in_transit",
+                "delayed",
+                "arrived",
+                "completed",
+                "cancelled",
+              ],
+            },
+            description: "Filter by trip status",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Nearby trips retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Trip" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid coordinates or parameters",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/operator/{operatorId}": {
+      get: {
+        summary: "Get trips by operator (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "operatorId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Operator ID",
+          },
+          {
+            name: "status",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: [
+                "scheduled",
+                "boarding",
+                "departed",
+                "in_transit",
+                "delayed",
+                "arrived",
+                "completed",
+                "cancelled",
+              ],
+            },
+            description: "Filter by trip status",
+          },
+          {
+            name: "dateFrom",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+            description: "Filter trips starting from this date",
+          },
+          {
+            name: "dateTo",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+            description: "Filter trips ending by this date",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Trips by operator retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Trip" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid operator ID or parameters",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/route/{routeId}": {
+      get: {
+        summary: "Get trips by route",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "routeId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Route ID",
+          },
+          {
+            name: "dateFrom",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+            description: "Filter trips starting from this date",
+          },
+          {
+            name: "dateTo",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+            description: "Filter trips ending by this date",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Trips by route retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    lurking: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Trip" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid route ID or parameters",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/bus/{busId}": {
+      get: {
+        summary: "Get trips by bus (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "busId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Bus ID",
+          },
+          {
+            name: "dateFrom",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+            description: "Filter trips starting from this date",
+          },
+          {
+            name: "dateTo",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+            description: "Filter trips ending by this date",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Trips by bus retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Trip" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid bus ID or parameters",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/my-trips": {
+      get: {
+        summary: "Get operator's own trips (Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "status",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: [
+                "scheduled",
+                "boarding",
+                "departed",
+                "in_transit",
+                "delayed",
+                "arrived",
+                "completed",
+                "cancelled",
+              ],
+            },
+            description: "Filter by trip status",
+          },
+          {
+            name: "dateFrom",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+            description: "Filter trips starting from this date",
+          },
+          {
+            name: "dateTo",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+            description: "Filter trips ending by this date",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Operator's trips retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Trip" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/number/{tripNumber}": {
+      get: {
+        summary: "Get trip by trip number",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "tripNumber",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^TRP-\\d{8}-\\d{3}$" },
+            description: "Trip number",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Trip retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Trip" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid trip number",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: { description: "Trip not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/incidents": {
+      get: {
+        summary: "Get trips with incidents (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "severity",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: ["low", "medium", "high", "critical"],
+            },
+            description: "Filter by incident severity",
+          },
+          {
+            name: "resolved",
+            in: "query",
+            schema: { type: "boolean" },
+            description: "Filter by incident resolution status",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Trips with incidents retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Trip" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/{tripId}": {
+      get: {
+        summary: "Get trip by ID",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "tripId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Trip ID",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Trip retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Trip" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid trip ID",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: { description: "Trip not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+      put: {
+        summary: "Update trip (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "tripId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Trip ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateTripRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Trip updated",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Trip" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Trip not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+      delete: {
+        summary: "Delete trip (Admin only)",
+        tags: ["Admin Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "tripId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0- комодка-fA-F]{24}$" },
+            description: "Trip ID",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Trip deleted",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { type: "null" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid trip ID",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Trip not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/search/advanced": {
+      post: {
+        summary: "Advanced trip search",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/TripSearchRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Search results",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        trips: {
+                          type: "array",
+                          items: { $ref: "#/components/schemas/Trip" },
+                        },
+                        pagination: {
+                          type: "object",
+                          properties: {
+                            totalTrips: { type: "integer" },
+                            page: { type: "integer" },
+                            limit: { type: "integer" },
+                            totalPages: { type: "integer" },
+                          },
+                        },
+                      },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/generate-schedule": {
+      post: {
+        summary: "Generate recurring trips (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/GenerateScheduleRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Recurring trips generated",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Trip" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/{tripId}/status": {
+      patch: {
+        summary: "Update trip status (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "tripId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Trip ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateStatusRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Trip status updated",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Trip" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Trip not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/{tripId}/location": {
+      patch: {
+        summary: "Update trip location (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "tripId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Trip ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateLocationRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Trip location updated",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Trip" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Trip not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/{tripId}/tracking": {
+      patch: {
+        summary: "Update live tracking data (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "tripId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Trip ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/LiveTrackingRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Live tracking data updated",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Trip" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Trip not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/{tripId}/incidents": {
+      post: {
+        summary: "Add incident to trip (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "tripId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Trip ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/IncidentRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Incident added",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Trip" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Trip not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/{tripId}/waypoints": {
+      patch: {
+        summary: "Update waypoint status (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "tripId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Trip ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateWaypointRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Waypoint updated",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Trip" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Trip or waypoint not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/{tripId}/passengers": {
+      post: {
+        summary: "Add passenger activity (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "tripId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Trip ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/PassengerActivityRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Passenger activity added",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Trip" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Trip or waypoint not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/{tripId}/ratings": {
+      post: {
+        summary: "Add rating to trip (Commuter only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "tripId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Trip ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/AddRatingRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Rating added",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Trip" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Trip not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/{tripId}/revenue": {
+      patch: {
+        summary: "Update trip revenue (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "tripId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Trip ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateRevenueRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Trip revenue updated",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Trip" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Trip not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/{tripId}/cancel": {
+      post: {
+        summary: "Cancel trip (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "tripId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Trip ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["reason"],
+                properties: {
+                  reason: { type: "string", maxLength: 500 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Trip cancelled",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { type: "null" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Trip not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/{tripId}/complete": {
+      post: {
+        summary: "Complete trip (Admin or Operator only)",
+        tags: ["Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "tripId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Trip ID",
+          },
+        ],
+        requestBody: {
+          required: false,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  actualArrival: { type: "string", format: "date-time" },
+                  revenue: {
+                    $ref: "#/components/schemas/UpdateRevenueRequest",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Trip completed",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { type: "null" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Trip not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/admin/bulk-update": {
+      patch: {
+        summary: "Bulk update trip statuses (Admin only)",
+        tags: ["Admin Trips"],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/BulkUpdateStatusRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Trip statuses updated",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        updatedCount: { type: "integer" },
+                        updatedTrips: {
+                          type: "array",
+                          items: { $ref: "#/components/schemas/Trip" },
+                        },
+                      },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/trips/admin/analytics": {
+      get: {
+        summary: "Get trip analytics (Admin only)",
+        tags: ["Admin Trips"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "operator",
+            in: "query",
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Filter by operator ID",
+          },
+          {
+            name: "route",
+            in: "query",
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Filter by route ID",
+          },
+          {
+            name: "dateFrom",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+            description: "Filter trips starting from this date",
+          },
+          {
+            name: "dateTo",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+            description: "Filter trips ending by this date",
+          },
+          {
+            name: "status",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: [
+                "scheduled",
+                "boarding",
+                "departed",
+                "in_transit",
+                "delayed",
+                "arrived",
+                "completed",
+                "cancelled",
+              ],
+            },
+            description: "Filter by trip status",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Trip analytics retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        totalTrips: { type: "integer" },
+                        averageRevenue: { type: "number" },
+                        averageOccupancy: { type: "number" },
+                        delayStatistics: {
+                          type: "object",
+                          properties: {
+                            delayedTrips: { type: "integer" },
+                            averageDelay: { type: "number" },
+                          },
+                        },
+                        statusBreakdown: {
+                          type: "object",
+                          additionalProperties: { type: "integer" },
+                        },
+                      },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid parameters",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
   },
   tags: [
     { name: "System", description: "System endpoints" },
@@ -4839,6 +7481,16 @@ const openapiSpecification = {
     { name: "Admin Routes", description: "Admin route management endpoints" },
     { name: "Buses", description: "Bus management endpoints" },
     { name: "Admin Buses", description: "Admin bus management endpoints" },
+    {
+      name: "Trips",
+      description:
+        "Endpoints for managing and querying trip information, accessible to authenticated users, operators, or admins depending on the endpoint.",
+    },
+    {
+      name: "Admin Trips",
+      description:
+        "Endpoints for administrative trip operations, restricted to admin users only.",
+    },
   ],
 };
 

@@ -3,6 +3,7 @@ const express = require("express");
 const userRoutes = require("./userRoutes");
 const routeRoutes = require("./routeRoutes");
 const busRoutes = require("./busRoutes");
+const tripRoutes = require("./tripRoutes");
 
 const router = express.Router();
 
@@ -37,6 +38,7 @@ router.get("/info", (req, res) => {
 router.use("/users", userRoutes);
 router.use("/routes", routeRoutes);
 router.use("/buses", busRoutes);
+router.use("/trips", tripRoutes);
 
 // Root endpoint
 router.get("/", (req, res) => {
@@ -50,6 +52,7 @@ router.get("/", (req, res) => {
       users: "/api/users",
       routes: "/api/routes",
       buses: "/api/buses",
+      trips: "/api/trips",
       health: "/api/health",
       info: "/api/info",
     },
