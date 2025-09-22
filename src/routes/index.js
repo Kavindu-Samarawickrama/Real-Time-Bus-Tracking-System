@@ -2,6 +2,7 @@
 const express = require("express");
 const userRoutes = require("./userRoutes");
 const routeRoutes = require("./routeRoutes");
+const busRoutes = require("./busRoutes");
 
 const router = express.Router();
 
@@ -35,6 +36,7 @@ router.get("/info", (req, res) => {
 // Mount routes
 router.use("/users", userRoutes);
 router.use("/routes", routeRoutes);
+router.use("/buses", busRoutes);
 
 // Root endpoint
 router.get("/", (req, res) => {
@@ -47,6 +49,7 @@ router.get("/", (req, res) => {
     endpoints: {
       users: "/api/users",
       routes: "/api/routes",
+      buses: "/api/buses",
       health: "/api/health",
       info: "/api/info",
     },
