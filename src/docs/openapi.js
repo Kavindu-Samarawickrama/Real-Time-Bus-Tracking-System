@@ -915,6 +915,741 @@ const openapiSpecification = {
           data: { $ref: "#/components/schemas/CreateRouteRequest" },
         },
       },
+      Bus: {
+        type: "object",
+        properties: {
+          _id: { type: "string", description: "Bus ID" },
+          registrationNumber: {
+            type: "string",
+            description: "Unique bus registration number (e.g., WP-1234)",
+          },
+          permitNumber: {
+            type: "string",
+            description: "Unique route permit number",
+          },
+          vehicleDetails: {
+            type: "object",
+            properties: {
+              make: { type: "string", description: "Vehicle make" },
+              model: { type: "string", description: "Vehicle model" },
+              year: { type: "integer", description: "Manufacturing year" },
+              engineNumber: { type: "string", description: "Engine number" },
+              chassisNumber: { type: "string", description: "Chassis number" },
+              fuelType: {
+                type: "string",
+                enum: ["diesel", "petrol", "cng", "electric", "hybrid"],
+                description: "Fuel type",
+              },
+              transmissionType: {
+                type: "string",
+                enum: ["manual", "automatic", "semi_automatic"],
+                description: "Transmission type",
+              },
+            },
+          },
+          capacity: {
+            type: "object",
+            properties: {
+              totalSeats: {
+                type: "integer",
+                description: "Total seat capacity",
+              },
+              standingCapacity: {
+                type: "integer",
+                description: "Standing capacity",
+              },
+              wheelchairAccessible: {
+                type: "integer",
+                description: "Wheelchair accessible seats",
+              },
+            },
+          },
+          dimensions: {
+            type: "object",
+            properties: {
+              length: { type: "number", description: "Bus length in meters" },
+              width: { type: "number", description: "Bus width in meters" },
+              height: { type: "number", description: "Bus height in meters" },
+            },
+          },
+          amenities: {
+            type: "object",
+            properties: {
+              airConditioning: { type: "boolean" },
+              wifi: { type: "boolean" },
+              chargingPorts: { type: "boolean" },
+              entertainment: { type: "boolean" },
+              restroom: { type: "boolean" },
+              recliningSeats: { type: "boolean" },
+              luggageCompartment: { type: "boolean" },
+              firstAidKit: { type: "boolean" },
+              fireExtinguisher: { type: "boolean" },
+              gpsTracking: { type: "boolean" },
+              cctv: { type: "boolean" },
+            },
+          },
+          operationalDetails: {
+            type: "object",
+            properties: {
+              operator: {
+                type: "string",
+                description: "Operator ID (User reference)",
+              },
+              assignedRoute: {
+                type: "string",
+                description: "Assigned route ID (Route reference)",
+              },
+              currentDriver: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  licenseNumber: { type: "string" },
+                  contactNumber: { type: "string" },
+                },
+              },
+              conductor: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  contactNumber: { type: "string" },
+                },
+              },
+            },
+          },
+          status: {
+            type: "string",
+            enum: [
+              "active",
+              "inactive",
+              "maintenance",
+              "out_of_service",
+              "pending_approval",
+            ],
+            description: "Bus status",
+          },
+          location: {
+            type: "object",
+            properties: {
+              current: {
+                type: "object",
+                properties: {
+                  coordinates: {
+                    type: "object",
+                    properties: {
+                      latitude: { type: "number" },
+                      longitude: { type: "number" },
+                    },
+                  },
+                  address: { type: "string" },
+                  lastUpdated: { type: "string", format: "date-time" },
+                  speed: { type: "number", description: "Speed in km/h" },
+                  heading: {
+                    type: "number",
+                    description: "Heading in degrees",
+                  },
+                },
+              },
+              depot: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  coordinates: {
+                    type: "object",
+                    properties: {
+                      latitude: { type: "number" },
+                      longitude: { type: "number" },
+                    },
+                  },
+                  address: { type: "string" },
+                },
+              },
+            },
+          },
+          maintenance: {
+            type: "object",
+            properties: {
+              lastService: { type: "string", format: "date-time" },
+              nextServiceDue: { type: "string", format: "date-time" },
+              serviceIntervalKm: { type: "integer" },
+              currentMileage: { type: "integer" },
+              fitnessExpiry: { type: "string", format: "date-time" },
+              insuranceExpiry: { type: "string", format: "date-time" },
+              emissionTestExpiry: { type: "string", format: "date-time" },
+              maintenanceRecords: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    date: { type: "string", format: "date-time" },
+                    type: {
+                      type: "string",
+                      enum: ["routine", "repair", "inspection", "emergency"],
+                    },
+                    description: { type: "string" },
+                    cost: { type: "number" },
+                    performedBy: { type: "string" },
+                    mileageAtService: { type: "integer" },
+                  },
+                },
+              },
+            },
+          },
+          compliance: {
+            type: "object",
+            properties: {
+              routePermitExpiry: { type: "string", format: "date-time" },
+              revenuePermitExpiry: { type: "string", format: "date-time" },
+              ntcRegistrationExpiry: { type: "string", format: "date-time" },
+              lastInspection: { type: "string", format: "date-time" },
+              nextInspectionDue: { type: "string", format: "date-time" },
+              violations: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    date: { type: "string", format: "date-time" },
+                    type: { type: "string" },
+                    description: { type: "string" },
+                    fine: { type: "number" },
+                    status: {
+                      type: "string",
+                      enum: ["pending", "paid", "disputed", "waived"],
+                    },
+                  },
+                },
+              },
+            },
+          },
+          statistics: {
+            type: "object",
+            properties: {
+              totalTrips: { type: "integer" },
+              totalKilometers: { type: "number" },
+              averageSpeed: { type: "number" },
+              fuelEfficiency: { type: "number" },
+              lastTripDate: { type: "string", format: "date-time" },
+              monthlyRevenue: { type: "number" },
+              passengerCount: { type: "integer" },
+              rating: {
+                type: "object",
+                properties: {
+                  average: { type: "number" },
+                  totalReviews: { type: "integer" },
+                },
+              },
+            },
+          },
+          createdBy: { type: "string", description: "User ID of creator" },
+          lastModifiedBy: {
+            type: "string",
+            description: "User ID of last modifier",
+          },
+          approvedBy: { type: "string", description: "User ID of approver" },
+          approvedAt: { type: "string", format: "date-time" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+          totalCapacity: {
+            type: "integer",
+            description: "Total capacity (virtual)",
+          },
+          serviceDueStatus: {
+            type: "string",
+            enum: ["overdue", "due_soon", "current", "unknown"],
+            description: "Service due status (virtual)",
+          },
+          complianceStatus: {
+            type: "string",
+            enum: ["expired", "expiring_soon", "compliant"],
+            description: "Compliance status (virtual)",
+          },
+        },
+      },
+      CreateBusRequest: {
+        type: "object",
+        required: [
+          "registrationNumber",
+          "permitNumber",
+          "vehicleDetails",
+          "capacity",
+          "dimensions",
+          "operationalDetails",
+          "maintenance",
+          "compliance",
+        ],
+        properties: {
+          registrationNumber: {
+            type: "string",
+            pattern: "^[A-Z]{2,3}-\\d{4}$",
+            description: "Sri Lankan registration number (e.g., WP-1234)",
+          },
+          permitNumber: {
+            type: "string",
+            description: "Unique route permit number",
+          },
+          vehicleDetails: {
+            $ref: "#/components/schemas/Bus/properties/vehicleDetails",
+          },
+          capacity: { $ref: "#/components/schemas/Bus/properties/capacity" },
+          dimensions: {
+            $ref: "#/components/schemas/Bus/properties/dimensions",
+          },
+          amenities: { $ref: "#/components/schemas/Bus/properties/amenities" },
+          operationalDetails: {
+            $ref: "#/components/schemas/Bus/properties/operationalDetails",
+          },
+          location: { $ref: "#/components/schemas/Bus/properties/location" },
+          maintenance: {
+            $ref: "#/components/schemas/Bus/properties/maintenance",
+          },
+          compliance: {
+            $ref: "#/components/schemas/Bus/properties/compliance",
+          },
+        },
+      },
+      UpdateBusRequest: {
+        type: "object",
+        properties: {
+          permitNumber: { type: "string" },
+          vehicleDetails: {
+            $ref: "#/components/schemas/Bus/properties/vehicleDetails",
+          },
+          capacity: { $ref: "#/components/schemas/Bus/properties/capacity" },
+          dimensions: {
+            $ref: "#/components/schemas/Bus/properties/dimensions",
+          },
+          amenities: { $ref: "#/components/schemas/Bus/properties/amenities" },
+          operationalDetails: {
+            $ref: "#/components/schemas/Bus/properties/operationalDetails",
+          },
+          location: { $ref: "#/components/schemas/Bus/properties/location" },
+          maintenance: {
+            $ref: "#/components/schemas/Bus/properties/maintenance",
+          },
+          compliance: {
+            $ref: "#/components/schemas/Bus/properties/compliance",
+          },
+        },
+        minProperties: 1,
+      },
+      UpdateBusStatusRequest: {
+        type: "object",
+        required: ["status"],
+        properties: {
+          status: {
+            type: "string",
+            enum: [
+              "active",
+              "inactive",
+              "maintenance",
+              "out_of_service",
+              "pending_approval",
+            ],
+          },
+          reason: { type: "string", maxLength: 500 },
+        },
+      },
+      UpdateLocationRequest: {
+        type: "object",
+        required: ["coordinates"],
+        properties: {
+          coordinates: {
+            type: "object",
+            required: ["latitude", "longitude"],
+            properties: {
+              latitude: { type: "number", minimum: 5.9, maximum: 9.9 },
+              longitude: { type: "number", minimum: 79.6, maximum: 81.9 },
+            },
+          },
+          address: { type: "string" },
+          speed: { type: "number", minimum: 0, maximum: 120 },
+          heading: { type: "number", minimum: 0, maximum: 359 },
+        },
+      },
+      BusQueryRequest: {
+        type: "object",
+        properties: {
+          page: { type: "integer", minimum: 1, default: 1 },
+          limit: { type: "integer", minimum: 1, maximum: 100, default: 10 },
+          status: {
+            type: "string",
+            enum: [
+              "active",
+              "inactive",
+              "maintenance",
+              "out_of_service",
+              "pending_approval",
+            ],
+          },
+          operator: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          route: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          search: { type: "string" },
+          registrationNumber: { type: "string" },
+          make: { type: "string" },
+          model: { type: "string" },
+          minSeats: { type: "integer", minimum: 10 },
+          maxSeats: { type: "integer", maximum: 80 },
+          amenities: {
+            type: "array",
+            items: {
+              type: "string",
+              enum: [
+                "airConditioning",
+                "wifi",
+                "chargingPorts",
+                "entertainment",
+                "restroom",
+                "recliningSeats",
+                "gpsTracking",
+                "cctv",
+              ],
+            },
+          },
+          fuelType: {
+            type: "string",
+            enum: ["diesel", "petrol", "cng", "electric", "hybrid"],
+          },
+          transmissionType: {
+            type: "string",
+            enum: ["manual", "automatic", "semi_automatic"],
+          },
+          needsService: { type: "boolean" },
+          expiring: { type: "boolean" },
+          sortBy: {
+            type: "string",
+            enum: [
+              "createdAt",
+              "registrationNumber",
+              "vehicleDetails.year",
+              "capacity.totalSeats",
+              "maintenance.currentMileage",
+            ],
+            default: "createdAt",
+          },
+          sortOrder: { type: "string", enum: ["asc", "desc"], default: "desc" },
+        },
+      },
+      BusSearchRequest: {
+        type: "object",
+        properties: {
+          location: {
+            oneOf: [
+              { type: "string" },
+              {
+                type: "object",
+                properties: {
+                  latitude: { type: "number", minimum: 5.9, maximum: 9.9 },
+                  longitude: { type: "number", minimum: 79.6, maximum: 81.9 },
+                },
+              },
+            ],
+          },
+          radius: { type: "number", minimum: 1, maximum: 100, default: 50 },
+          route: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          operator: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          amenities: {
+            type: "array",
+            items: {
+              type: "string",
+              enum: [
+                "airConditioning",
+                "wifi",
+                "chargingPorts",
+                "entertainment",
+                "restroom",
+                "recliningSeats",
+                "gpsTracking",
+                "cctv",
+              ],
+            },
+          },
+          minCapacity: { type: "integer", minimum: 10 },
+          maxCapacity: { type: "integer", maximum: 120 },
+          fuelType: {
+            type: "string",
+            enum: ["diesel", "petrol", "cng", "electric", "hybrid"],
+          },
+          status: {
+            type: "string",
+            enum: [
+              "active",
+              "inactive",
+              "maintenance",
+              "out_of_service",
+              "pending_approval",
+            ],
+          },
+          page: { type: "integer", minimum: 1, default: 1 },
+          limit: { type: "integer", minimum: 1, maximum: 100, default: 10 },
+        },
+      },
+      AddMaintenanceRecordRequest: {
+        type: "object",
+        required: ["type", "description"],
+        properties: {
+          type: {
+            type: "string",
+            enum: ["routine", "repair", "inspection", "emergency"],
+          },
+          description: { type: "string", maxLength: 500 },
+          cost: { type: "number", minimum: 0 },
+          performedBy: { type: "string" },
+          mileageAtService: { type: "integer", minimum: 0 },
+          date: { type: "string", format: "date-time", default: "now" },
+        },
+      },
+      BulkUpdateStatusRequest: {
+        type: "object",
+        required: ["busIds", "status"],
+        properties: {
+          busIds: {
+            type: "array",
+            items: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            minItems: 1,
+            maxItems: 50,
+          },
+          status: {
+            type: "string",
+            enum: [
+              "active",
+              "inactive",
+              "maintenance",
+              "out_of_service",
+              "pending_approval",
+            ],
+          },
+          reason: { type: "string", maxLength: 500 },
+        },
+      },
+      AssignRouteRequest: {
+        type: "object",
+        required: ["routeId"],
+        properties: {
+          routeId: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          effectiveDate: { type: "string", format: "date-time" },
+        },
+      },
+      UnassignRouteRequest: {
+        type: "object",
+        properties: {
+          reason: { type: "string", maxLength: 500 },
+        },
+      },
+      FleetStatsRequest: {
+        type: "object",
+        properties: {
+          operator: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          route: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+          dateFrom: { type: "string", format: "date-time" },
+          dateTo: { type: "string", format: "date-time" },
+        },
+      },
+      AssignPersonnelRequest: {
+        type: "object",
+        properties: {
+          driver: {
+            type: "object",
+            properties: {
+              name: { type: "string", maxLength: 100 },
+              licenseNumber: { type: "string" },
+              contactNumber: {
+                type: "string",
+                pattern: "^(\\+94|0)[0-9]{9}$",
+              },
+            },
+          },
+          conductor: {
+            type: "object",
+            properties: {
+              name: { type: "string", maxLength: 100 },
+              contactNumber: {
+                type: "string",
+                pattern: "^(\\+94|0)[0-9]{9}$",
+              },
+            },
+          },
+        },
+        anyOf: [{ required: ["driver"] }, { required: ["conductor"] }],
+      },
+      TrackingDataRequest: {
+        type: "object",
+        required: ["coordinates", "speed", "heading"],
+        properties: {
+          coordinates: {
+            type: "object",
+            required: ["latitude", "longitude"],
+            properties: {
+              latitude: { type: "number", minimum: 5.9, maximum: 9.9 },
+              longitude: { type: "number", minimum: 79.6, maximum: 81.9 },
+            },
+          },
+          speed: { type: "number", minimum: 0, maximum: 120 },
+          heading: { type: "number", minimum: 0, maximum: 359 },
+          timestamp: { type: "string", format: "date-time", default: "now" },
+          accuracy: { type: "number", minimum: 0 },
+          altitude: { type: "number" },
+        },
+      },
+      BusSummaryResponse: {
+        type: "object",
+        properties: {
+          buses: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                _id: { type: "string" },
+                registrationNumber: { type: "string" },
+                make: { type: "string" },
+                model: { type: "string" },
+                year: { type: "integer" },
+                totalSeats: { type: "integer" },
+                totalCapacity: { type: "integer" },
+                status: {
+                  type: "string",
+                  enum: [
+                    "active",
+                    "inactive",
+                    "maintenance",
+                    "out_of_service",
+                    "pending_approval",
+                  ],
+                },
+                fuelType: {
+                  type: "string",
+                  enum: ["diesel", "petrol", "cng", "electric", "hybrid"],
+                },
+                assignedRoute: {
+                  type: "object",
+                  properties: {
+                    _id: { type: "string" },
+                    routeNumber: { type: "string" },
+                    routeName: { type: "string" },
+                  },
+                  nullable: true,
+                },
+                operator: {
+                  type: "object",
+                  properties: {
+                    _id: { type: "string" },
+                    companyName: { type: "string" },
+                    name: { type: "string" },
+                  },
+                },
+                serviceDueStatus: {
+                  type: "string",
+                  enum: ["overdue", "due_soon", "current", "unknown"],
+                },
+                complianceStatus: {
+                  type: "string",
+                  enum: ["expired", "expiring_soon", "compliant"],
+                },
+              },
+            },
+          },
+          totalBuses: { type: "integer" },
+          summary: {
+            type: "object",
+            properties: {
+              byStatus: { type: "object" },
+              byFuelType: { type: "object" },
+              needingService: { type: "integer" },
+              complianceIssues: { type: "integer" },
+              assigned: { type: "integer" },
+              unassigned: { type: "integer" },
+            },
+          },
+        },
+      },
+      ValidateBusDataResponse: {
+        type: "object",
+        properties: {
+          valid: { type: "boolean" },
+          validations: {
+            type: "object",
+            properties: {
+              registrationNumberAvailable: { type: "boolean" },
+              permitNumberAvailable: { type: "boolean" },
+              operatorValid: { type: "boolean" },
+              routeValid: { type: "boolean" },
+              complianceValid: { type: "boolean" },
+            },
+          },
+          data: { $ref: "#/components/schemas/CreateBusRequest" },
+        },
+      },
+      BusTrackingResponse: {
+        type: "object",
+        properties: {
+          busInfo: {
+            type: "object",
+            properties: {
+              registrationNumber: { type: "string" },
+              route: { $ref: "#/components/schemas/Route" },
+              operator: { $ref: "#/components/schemas/User" },
+              capacity: {
+                $ref: "#/components/schemas/Bus/properties/capacity",
+              },
+              amenities: {
+                $ref: "#/components/schemas/Bus/properties/amenities",
+              },
+            },
+          },
+          tracking: {
+            type: "object",
+            properties: {
+              coordinates: {
+                type: "object",
+                properties: {
+                  latitude: { type: "number" },
+                  longitude: { type: "number" },
+                },
+              },
+              speed: { type: "number" },
+              heading: { type: "number" },
+              lastUpdated: { type: "string", format: "date-time" },
+              address: { type: "string" },
+            },
+            nullable: true,
+          },
+          status: {
+            type: "string",
+            enum: [
+              "active",
+              "inactive",
+              "maintenance",
+              "out_of_service",
+              "pending_approval",
+            ],
+          },
+          message: { type: "string" },
+        },
+      },
+      MultipleBusesTrackingResponse: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            _id: { type: "string" },
+            registrationNumber: { type: "string" },
+            route: { $ref: "#/components/schemas/Route" },
+            operator: { type: "string" },
+            location: {
+              $ref: "#/components/schemas/Bus/properties/location/properties/current",
+            },
+            status: {
+              type: "string",
+              enum: [
+                "active",
+                "inactive",
+                "maintenance",
+                "out_of_service",
+                "pending_approval",
+              ],
+            },
+            error: { type: "string" },
+          },
+        },
+      },
     },
   },
   paths: {
@@ -2581,6 +3316,1517 @@ const openapiSpecification = {
         },
       },
     },
+    "/buses": {
+      get: {
+        summary: "Get all buses with filters",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "page",
+            in: "query",
+            schema: { type: "integer", minimum: 1, default: 1 },
+            description: "Page number",
+          },
+          {
+            name: "limit",
+            in: "query",
+            schema: { type: "integer", minimum: 1, maximum: 100, default: 10 },
+            description: "Items per page",
+          },
+          {
+            name: "status",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: [
+                "active",
+                "inactive",
+                "maintenance",
+                "out_of_service",
+                "pending_approval",
+              ],
+            },
+            description: "Filter by bus status",
+          },
+          {
+            name: "operator",
+            in: "query",
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Filter by operator ID",
+          },
+          {
+            name: "route",
+            in: "query",
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Filter by route ID",
+          },
+          {
+            name: "search",
+            in: "query",
+            schema: { type: "string" },
+            description: "Search term",
+          },
+          {
+            name: "registrationNumber",
+            in: "query",
+            schema: { type: "string" },
+            description: "Filter by registration number",
+          },
+          {
+            name: "make",
+            in: "query",
+            schema: { type: "string" },
+            description: "Filter by vehicle make",
+          },
+          {
+            name: "model",
+            in: "query",
+            schema: { type: "string" },
+            description: "Filter by vehicle model",
+          },
+          {
+            name: "minSeats",
+            in: "query",
+            schema: { type: "integer", minimum: 10 },
+            description: "Minimum seat capacity",
+          },
+          {
+            name: "maxSeats",
+            in: "query",
+            schema: { type: "integer", maximum: 80 },
+            description: "Maximum seat capacity",
+          },
+          {
+            name: "amenities",
+            in: "query",
+            schema: {
+              type: "array",
+              items: {
+                type: "string",
+                enum: [
+                  "airConditioning",
+                  "wifi",
+                  "chargingPorts",
+                  "entertainment",
+                  "restroom",
+                  "recliningSeats",
+                  "gpsTracking",
+                  "cctv",
+                ],
+              },
+            },
+            description: "Filter by amenities",
+          },
+          {
+            name: "fuelType",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: ["diesel", "petrol", "cng", "electric", "hybrid"],
+            },
+            description: "Filter by fuel type",
+          },
+          {
+            name: "transmissionType",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: ["manual", "automatic", "semi_automatic"],
+            },
+            description: "Filter by transmission type",
+          },
+          {
+            name: "needsService",
+            in: "query",
+            schema: { type: "boolean" },
+            description: "Filter buses needing service",
+          },
+          {
+            name: "expiring",
+            in: "query",
+            schema: { type: "boolean" },
+            description: "Filter buses with expiring permits",
+          },
+          {
+            name: "sortBy",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: [
+                "createdAt",
+                "registrationNumber",
+                "vehicleDetails.year",
+                "capacity.totalSeats",
+                "maintenance.currentMileage",
+              ],
+              default: "createdAt",
+            },
+            description: "Sort field",
+          },
+          {
+            name: "sortOrder",
+            in: "query",
+            schema: { type: "string", enum: ["asc", "desc"], default: "desc" },
+            description: "Sort order",
+          },
+        ],
+        responses: {
+          200: {
+            description: "List of buses",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        buses: {
+                          type: "array",
+                          items: { $ref: "#/components/schemas/Bus" },
+                        },
+                        pagination: {
+                          type: "object",
+                          properties: {
+                            totalBuses: { type: "integer" },
+                            page: { type: "integer" },
+                            limit: { type: "integer" },
+                            totalPages: { type: "integer" },
+                          },
+                        },
+                      },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+      post: {
+        summary: "Create a new bus (Admin or Operator only)",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CreateBusRequest" },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: "Bus created successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Bus" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/search/nearby": {
+      get: {
+        summary: "Find nearby buses",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "latitude",
+            in: "query",
+            required: true,
+            schema: { type: "number", minimum: 5.9, maximum: 9.9 },
+            description: "Latitude within Sri Lanka bounds",
+          },
+          {
+            name: "longitude",
+            in: "query",
+            required: true,
+            schema: { type: "number", minimum: 79.6, maximum: 81.9 },
+            description: "Longitude within Sri Lanka bounds",
+          },
+          {
+            name: "radius",
+            in: "query",
+            schema: { type: "number", default: 50 },
+            description: "Search radius in kilometers",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Nearby buses retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Bus" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/operator/{operatorId}": {
+      get: {
+        summary: "Get buses by operator (Admin or Operator only)",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "operatorId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Operator ID",
+          },
+          {
+            name: "status",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: [
+                "active",
+                "inactive",
+                "maintenance",
+                "out_of_service",
+                "pending_approval",
+              ],
+            },
+            description: "Filter by bus status",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Buses by operator retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Bus" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid operator ID",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/route/{routeId}": {
+      get: {
+        summary: "Get buses by route",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "routeId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Route ID",
+          },
+          {
+            name: "status",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: [
+                "active",
+                "inactive",
+                "maintenance",
+                "out_of_service",
+                "pending_approval",
+              ],
+              default: "active",
+            },
+            description: "Filter by bus status",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Buses by route retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Bus" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid route ID",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/my-buses": {
+      get: {
+        summary: "Get operator's own buses (Operator only)",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "status",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: [
+                "active",
+                "inactive",
+                "maintenance",
+                "out_of_service",
+                "pending_approval",
+              ],
+            },
+            description: "Filter by bus status",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Operator's buses retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Bus" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/registration/{registrationNumber}": {
+      get: {
+        summary: "Get bus by registration number",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "registrationNumber",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Bus registration number",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Bus retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Bus" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid registration number",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: { description: "Bus not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/maintenance/needing-service": {
+      get: {
+        summary: "Get buses needing service (Admin or Operator only)",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: "Buses needing service retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Bus" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/compliance/expiring-permits": {
+      get: {
+        summary: "Get buses with expiring permits (Admin or Operator only)",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "days",
+            in: "query",
+            schema: { type: "integer", minimum: 1, maximum: 365, default: 30 },
+            description: "Number of days to check for expiring permits",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Buses with expiring permits retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Bus" },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid days parameter",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/{busId}": {
+      get: {
+        summary: "Get bus by ID",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "busId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Bus ID",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Bus retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Bus" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid bus ID",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: { description: "Bus not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+      put: {
+        summary: "Update bus (Admin or Operator only)",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "busId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Bus ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateBusRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Bus updated",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Bus" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Bus not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+      delete: {
+        summary: "Delete bus (Admin only)",
+        tags: ["Admin Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "busId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Bus ID",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Bus deleted",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { type: "null" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid bus ID",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Bus not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/{busId}/tracking": {
+      get: {
+        summary: "Get bus live tracking data",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "busId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Bus ID",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Bus tracking data retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/BusTrackingResponse" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid bus ID",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: { description: "Bus not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/{busId}/maintenance/history": {
+      get: {
+        summary: "Get bus maintenance history (Admin or Operator only)",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "busId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Bus ID",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Maintenance history retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "array",
+                      items: {
+                        $ref: "#/components/schemas/Bus/properties/maintenance/properties/maintenanceRecords/items",
+                      },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid bus ID",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Bus not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/search/advanced": {
+      post: {
+        summary: "Advanced bus search",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/BusSearchRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Search results",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        buses: {
+                          type: "array",
+                          items: { $ref: "#/components/schemas/Bus" },
+                        },
+                        pagination: {
+                          type: "object",
+                          properties: {
+                            totalBuses: { type: "integer" },
+                            page: { type: "integer" },
+                            limit: { type: "integer" },
+                            totalPages: { type: "integer" },
+                          },
+                        },
+                      },
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/validate": {
+      post: {
+        summary: "Validate bus data (Admin or Operator only)",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CreateBusRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Bus data validation completed",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      $ref: "#/components/schemas/ValidateBusDataResponse",
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: false },
+                    message: { type: "string" },
+                    errors: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: { message: { type: "string" } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/tracking/multiple": {
+      post: {
+        summary: "Get live tracking for multiple buses",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["busIds"],
+                properties: {
+                  busIds: {
+                    type: "array",
+                    items: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+                    minItems: 1,
+                    maxItems: 50,
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Multiple buses tracking data retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      $ref: "#/components/schemas/MultipleBusesTrackingResponse",
+                    },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/{busId}/status": {
+      patch: {
+        summary: "Update bus status (Admin or Operator only)",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "busId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Bus ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateBusStatusRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Bus status updated",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Bus" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Bus not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/{busId}/location": {
+      patch: {
+        summary: "Update bus location (Admin or Operator only)",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "busId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Bus ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateLocationRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Bus location updated",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Bus" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Bus not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/{busId}/tracking": {
+      patch: {
+        summary: "Update bus tracking data (Admin or Operator only)",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "busId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Bus ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/TrackingDataRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Bus tracking data updated",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Bus" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Bus not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/{busId}/maintenance": {
+      post: {
+        summary: "Add maintenance record (Admin or Operator only)",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "busId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Bus ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/AddMaintenanceRecordRequest",
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Maintenance record added",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Bus" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Bus not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/{busId}/assign-route": {
+      post: {
+        summary: "Assign route to bus (Admin or Operator only)",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "busId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Bus ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/AssignRouteRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Route assigned to bus",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Bus" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Bus or route not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/{busId}/unassign-route": {
+      post: {
+        summary: "Unassign route from bus (Admin or Operator only)",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "busId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Bus ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UnassignRouteRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Route unassigned from bus",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Bus" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Bus not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/{busId}/assign-personnel": {
+      post: {
+        summary: "Assign personnel to bus (Admin or Operator only)",
+        tags: ["Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "busId",
+            in: "path",
+            required: true,
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Bus ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/AssignPersonnelRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Personnel assigned to bus",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/Bus" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          404: { description: "Bus not found" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/admin/statistics": {
+      get: {
+        summary: "Get fleet statistics (Admin only)",
+        tags: ["Admin Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "operator",
+            in: "query",
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Filter by operator ID",
+          },
+          {
+            name: "route",
+            in: "query",
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Filter by route ID",
+          },
+          {
+            name: "dateFrom",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+            description: "Start date for statistics",
+          },
+          {
+            name: "dateTo",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+            description: "End date for statistics",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Fleet statistics retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { type: "object" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/admin/summary": {
+      get: {
+        summary: "Get buses summary (Admin only)",
+        tags: ["Admin Buses"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "status",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: [
+                "active",
+                "inactive",
+                "maintenance",
+                "out_of_service",
+                "pending_approval",
+              ],
+              default: "active",
+            },
+            description: "Filter by bus status",
+          },
+          {
+            name: "operator",
+            in: "query",
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Filter by operator ID",
+          },
+          {
+            name: "route",
+            in: "query",
+            schema: { type: "string", pattern: "^[0-9a-fA-F]{24}$" },
+            description: "Filter by route ID",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Buses summary retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { $ref: "#/components/schemas/BusSummaryResponse" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
+    "/buses/admin/bulk/status": {
+      put: {
+        summary: "Bulk update bus status (Admin only)",
+        tags: ["Admin Buses"],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/BulkUpdateStatusRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Bus statuses updated",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { type: "object" },
+                    message: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: { description: "Unauthorized" },
+          403: { description: "Forbidden" },
+          429: { description: "Rate limit exceeded" },
+        },
+      },
+    },
   },
   tags: [
     { name: "System", description: "System endpoints" },
@@ -2591,6 +4837,8 @@ const openapiSpecification = {
     { name: "Admin Users", description: "Admin user management endpoints" },
     { name: "Routes", description: "Route management endpoints" },
     { name: "Admin Routes", description: "Admin route management endpoints" },
+    { name: "Buses", description: "Bus management endpoints" },
+    { name: "Admin Buses", description: "Admin bus management endpoints" },
   ],
 };
 
