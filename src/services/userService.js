@@ -32,6 +32,63 @@ class UserService {
 
       logger.info(`New user registered: ${user.email} with role: ${user.role}`);
 
+      try {
+        await notificationService.createNotification(
+          {
+            type: "system_announcement",
+            priority: "normal",
+            title: "Welcome to NTC Bus Tracking System",
+            message: `Welcome ${
+              user.profile?.firstName || user.email
+            }! Your account has been created successfully and is pending approval by NTC administrators.`,
+            recipients: {
+              users: [
+                {
+                  user: user._id,
+                  email: user.email,
+                  name: user.profile?.firstName
+                    ? `${user.profile.firstName} ${user.profile.lastName || ""}`
+                    : user.email,
+                  role: user.role,
+                },
+              ],
+            },
+            metadata: {
+              source: "automated",
+              category: "user_management",
+            },
+          },
+          user._id
+        );
+
+        // Send welcome email directly
+        await emailService.sendWelcomeEmail(user);
+      } catch (notificationError) {
+        logger.warn("Failed to send welcome notification:", notificationError);
+      }
+
+      // Notify admins about new user registration
+      try {
+        await notificationService.createNotification(
+          {
+            type: "system_announcement",
+            priority: "normal",
+            title: "New User Registration",
+            message: `A new ${user.role} user has registered: ${user.email}. Account requires approval.`,
+            recipients: {
+              groups: ["ntc_admins"],
+            },
+            metadata: {
+              source: "automated",
+              category: "user_management",
+            },
+          },
+          user._id
+        );
+      } catch (notificationError) {
+        logger.warn("Failed to send admin notification:", notificationError);
+      }
+
       // Generate token
       const token = generateToken(user._id);
 
@@ -222,6 +279,57 @@ class UserService {
       }
 
       const updatedUser = await userRepository.updateById(userId, { status });
+
+      // Send notification about status change
+      try {
+        let notificationData = {
+          type: "system_announcement",
+          priority: "normal",
+          recipients: {
+            users: [
+              {
+                user: user._id,
+                email: user.email,
+                name: user.profile?.firstName
+                  ? `${user.profile.firstName} ${user.profile.lastName || ""}`
+                  : user.email,
+                role: user.role,
+              },
+            ],
+          },
+          metadata: {
+            source: "automated",
+            category: "user_management",
+          },
+        };
+
+        if (status === "active") {
+          notificationData.title = "Account Activated";
+          notificationData.message =
+            "Your account has been approved and activated. You can now fully access the NTC Bus Tracking System.";
+          notificationData.priority = "normal";
+        } else if (status === "suspended") {
+          notificationData.title = "Account Suspended";
+          notificationData.message =
+            "Your account has been suspended. Please contact NTC administration for more information.";
+          notificationData.priority = "high";
+        } else if (status === "inactive") {
+          notificationData.title = "Account Deactivated";
+          notificationData.message =
+            "Your account has been deactivated. Contact NTC if you believe this is an error.";
+          notificationData.priority = "high";
+        }
+
+        await notificationService.createNotification(
+          notificationData,
+          updatedBy
+        );
+      } catch (notificationError) {
+        logger.warn(
+          "Failed to send user status notification:",
+          notificationError
+        );
+      }
 
       logger.info(
         `User status updated: ${user.email} -> ${status} by ${updatedBy}`

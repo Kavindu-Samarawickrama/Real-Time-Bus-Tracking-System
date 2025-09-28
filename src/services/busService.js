@@ -200,6 +200,41 @@ class BusService {
         enrichedUpdateData
       );
 
+      logger.info(
+        `Bus updated: ${updatedBus.registrationNumber} by user ${updatedBy}`
+      );
+
+      return updatedBus;
+    } catch (error) {
+      logger.error("Update bus failed:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update bus status
+   */
+  async updateBusStatus(busId, status, reason, updatedBy) {
+    try {
+      const bus = await busRepository.findById(busId, false);
+
+      if (!bus) {
+        throw new ApiError("Bus not found", 404);
+      }
+
+      const updateData = {
+        status,
+        lastModifiedBy: updatedBy,
+      };
+
+      // Set approval info if approving
+      if (status === "active" && bus.status === "pending_approval") {
+        updateData.approvedBy = updatedBy;
+        updateData.approvedAt = new Date();
+      }
+
+      const updatedBus = await busRepository.updateById(busId, updateData);
+
       // Send notifications based on status change
       try {
         if (status === "active" && bus.status === "pending_approval") {
@@ -269,45 +304,6 @@ class BusService {
           notificationError
         );
       }
-
-      logger.info(
-        `Bus status updated: ${
-          bus.registrationNumber
-        } → ${status} by user ${updatedBy}${
-          reason ? ` (Reason: ${reason})` : ""
-        }`
-      );
-
-      return updatedBus;
-    } catch (error) {
-      logger.error("Update bus failed:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update bus status
-   */
-  async updateBusStatus(busId, status, reason, updatedBy) {
-    try {
-      const bus = await busRepository.findById(busId, false);
-
-      if (!bus) {
-        throw new ApiError("Bus not found", 404);
-      }
-
-      const updateData = {
-        status,
-        lastModifiedBy: updatedBy,
-      };
-
-      // Set approval info if approving
-      if (status === "active" && bus.status === "pending_approval") {
-        updateData.approvedBy = updatedBy;
-        updateData.approvedAt = new Date();
-      }
-
-      const updatedBus = await busRepository.updateById(busId, updateData);
 
       logger.info(
         `Bus status updated: ${
