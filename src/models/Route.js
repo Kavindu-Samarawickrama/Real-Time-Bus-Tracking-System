@@ -246,7 +246,7 @@ const routeSchema = new mongoose.Schema(
 );
 
 // Indexes for better performance
-routeSchema.index({ routeNumber: 1 });
+// routeSchema.index({ routeNumber: 1 });
 routeSchema.index({ "origin.province": 1, "destination.province": 1 });
 routeSchema.index({ "origin.city": 1, "destination.city": 1 });
 routeSchema.index({ status: 1 });

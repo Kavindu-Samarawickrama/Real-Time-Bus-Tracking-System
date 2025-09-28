@@ -143,7 +143,8 @@ class Server {
         );
         logger.info(`API available at http://localhost:${this.port}/api`);
         logger.info(
-          `Swagger docs available at http://localhost:${this.port}/api/docs`
+          // `Swagger docs available at http://localhost:${this.port}/api/docs`
+          `Swagger docs available at https://27a602eaabab.ngrok-free.app/api/docs`
         );
       });
 

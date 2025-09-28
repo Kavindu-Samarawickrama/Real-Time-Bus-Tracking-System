@@ -312,7 +312,7 @@ const notificationSchema = new mongoose.Schema(
 );
 
 // Indexes for better performance
-notificationSchema.index({ notificationId: 1 });
+// notificationSchema.index({ notificationId: 1 });
 notificationSchema.index({ type: 1, priority: 1 });
 notificationSchema.index({ "delivery.status": 1 });
 notificationSchema.index({ "delivery.scheduledFor": 1 });

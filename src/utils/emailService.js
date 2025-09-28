@@ -30,8 +30,8 @@ class EmailService {
         return;
       }
 
-      // Create Gmail transporter
-      this.transporter = nodemailer.createTransporter({
+      // Create Gmail transporter - FIXED: changed createTransporter to createTransport
+      this.transporter = nodemailer.createTransport({
         service: "gmail",
         host: "smtp.gmail.com",
         port: 587,

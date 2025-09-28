@@ -12,7 +12,8 @@ const openapiSpecification = {
   },
   servers: [
     {
-      url: `http://localhost:${process.env.PORT || 3000}/api`,
+      // url: `http://localhost:${process.env.PORT || 3000}/api`,
+      url: `https://27a602eaabab.ngrok-free.app/api`,
       description: "Development server",
     },
   ],
@@ -2634,6 +2635,680 @@ const openapiSpecification = {
             ],
           },
         },
+      },
+      Tracking: {
+        type: "object",
+        properties: {
+          trackingId: {
+            type: "string",
+            pattern: "^TRK-\\d{8}-\\d{6}$",
+            example: "TRK-20250930-171005",
+            description: "Unique tracking ID (format: TRK-YYYYMMDD-HHMMSS)",
+          },
+          trip: {
+            type: "string",
+            format: "objectId",
+            example: "60c72b2f9b1e8a1b8c8d4f56",
+            description: "Reference to Trip document",
+          },
+          bus: {
+            type: "string",
+            format: "objectId",
+            example: "60c72b2f9b1e8a1b8c8d4f57",
+            description: "Reference to Bus document",
+          },
+          route: {
+            type: "string",
+            format: "objectId",
+            example: "60c72b2f9b1e8a1b8c8d4f58",
+            description: "Reference to Route document",
+          },
+          driver: {
+            type: "object",
+            properties: {
+              name: { type: "string", example: "John Doe" },
+              contactNumber: {
+                type: "string",
+                pattern: "^(\\+94|0)[0-9]{9}$",
+                example: "+94123456789",
+                description: "Sri Lankan phone number",
+              },
+              driverId: { type: "string", example: "DRV12345" },
+            },
+            required: ["name", "contactNumber"],
+          },
+          status: {
+            type: "string",
+            enum: [
+              "active",
+              "paused",
+              "stopped",
+              "completed",
+              "emergency",
+              "offline",
+            ],
+            default: "active",
+            description: "Tracking session status",
+          },
+          realTimeData: {
+            type: "object",
+            properties: {
+              currentLocation: {
+                type: "object",
+                properties: {
+                  type: { type: "string", enum: ["Point"], default: "Point" },
+                  coordinates: {
+                    type: "array",
+                    items: { type: "number" },
+                    minItems: 2,
+                    maxItems: 2,
+                    example: [79.85, 6.93],
+                    description:
+                      "[longitude, latitude] within Sri Lanka bounds (lat: 5.9-9.9, lon: 79.6-81.9)",
+                  },
+                },
+                required: ["type", "coordinates"],
+              },
+              speed: {
+                type: "number",
+                minimum: 0,
+                maximum: 120,
+                default: 0,
+                description: "Speed in km/h",
+              },
+              heading: {
+                type: "number",
+                minimum: 0,
+                maximum: 359,
+                description: "Heading in degrees",
+              },
+              altitude: {
+                type: "number",
+                minimum: -100,
+                maximum: 3000,
+                description: "Altitude in meters",
+              },
+              accuracy: {
+                type: "number",
+                minimum: 0,
+                default: 10,
+                description: "GPS accuracy in meters",
+              },
+              timestamp: {
+                type: "string",
+                format: "date-time",
+                description: "Location timestamp",
+              },
+              address: { type: "string", description: "Resolved address" },
+            },
+            required: ["currentLocation", "timestamp"],
+          },
+          routeProgress: {
+            type: "object",
+            properties: {
+              distanceFromOrigin: {
+                type: "number",
+                minimum: 0,
+                default: 0,
+                description: "Distance from origin in km",
+              },
+              distanceToDestination: {
+                type: "number",
+                minimum: 0,
+                description: "Distance to destination in km",
+              },
+              completionPercentage: {
+                type: "number",
+                minimum: 0,
+                maximum: 100,
+                default: 0,
+                description: "Route completion percentage",
+              },
+              estimatedArrival: {
+                type: "string",
+                format: "date-time",
+                description: "Estimated arrival time",
+              },
+              nextWaypoint: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  coordinates: {
+                    type: "array",
+                    items: { type: "number" },
+                    minItems: 2,
+                    maxItems: 2,
+                  },
+                  estimatedArrival: { type: "string", format: "date-time" },
+                  distanceAway: {
+                    type: "number",
+                    description: "Distance to waypoint in km",
+                  },
+                },
+              },
+            },
+          },
+          geofences: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                type: {
+                  type: "string",
+                  enum: [
+                    "station",
+                    "terminal",
+                    "depot",
+                    "waypoint",
+                    "restricted_zone",
+                  ],
+                },
+                coordinates: {
+                  type: "array",
+                  items: { type: "number" },
+                  minItems: 2,
+                  maxItems: 2,
+                },
+                radius: {
+                  type: "number",
+                  minimum: 10,
+                  maximum: 5000,
+                  description: "Radius in meters",
+                },
+                entered: { type: "boolean", default: false },
+                enteredAt: { type: "string", format: "date-time" },
+                exitedAt: { type: "string", format: "date-time" },
+                alerts: {
+                  type: "object",
+                  properties: {
+                    onEntry: { type: "boolean", default: true },
+                    onExit: { type: "boolean", default: true },
+                  },
+                },
+              },
+              required: ["name", "type", "coordinates", "radius"],
+            },
+          },
+          trackingHistory: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                location: {
+                  type: "object",
+                  properties: {
+                    type: { type: "string", enum: ["Point"], default: "Point" },
+                    coordinates: {
+                      type: "array",
+                      items: { type: "number" },
+                      minItems: 2,
+                      maxItems: 2,
+                    },
+                  },
+                },
+                speed: { type: "number" },
+                heading: { type: "number" },
+                altitude: { type: "number" },
+                accuracy: { type: "number" },
+                timestamp: { type: "string", format: "date-time" },
+                address: { type: "string" },
+                distanceFromPrevious: {
+                  type: "number",
+                  description: "Distance from previous point in meters",
+                },
+                timeSinceLastUpdate: {
+                  type: "number",
+                  description: "Time since last update in seconds",
+                },
+              },
+              required: ["timestamp"],
+            },
+          },
+          alerts: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                alertId: { type: "string" },
+                type: {
+                  type: "string",
+                  enum: [
+                    "speed_violation",
+                    "route_deviation",
+                    "geofence_entry",
+                    "geofence_exit",
+                    "emergency_button",
+                    "engine_issue",
+                    "fuel_low",
+                    "maintenance_due",
+                    "communication_loss",
+                  ],
+                },
+                severity: {
+                  type: "string",
+                  enum: ["low", "medium", "high", "critical"],
+                },
+                message: { type: "string" },
+                location: {
+                  type: "object",
+                  properties: {
+                    coordinates: {
+                      type: "array",
+                      items: { type: "number" },
+                      minItems: 2,
+                      maxItems: 2,
+                    },
+                    address: { type: "string" },
+                  },
+                },
+                timestamp: { type: "string", format: "date-time" },
+                acknowledged: { type: "boolean", default: false },
+                acknowledgedBy: { type: "string", format: "objectId" },
+                acknowledgedAt: { type: "string", format: "date-time" },
+                resolved: { type: "boolean", default: false },
+                resolvedAt: { type: "string", format: "date-time" },
+              },
+              required: ["alertId", "type", "severity", "message"],
+            },
+          },
+          emergencyData: {
+            type: "object",
+            properties: {
+              panicButtonPressed: { type: "boolean", default: false },
+              lastPanicAt: { type: "string", format: "date-time" },
+              emergencyContacts: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    phone: { type: "string" },
+                    relationship: { type: "string" },
+                    notified: { type: "boolean", default: false },
+                  },
+                },
+              },
+              currentEmergency: {
+                type: "object",
+                properties: {
+                  type: {
+                    type: "string",
+                    enum: [
+                      "accident",
+                      "breakdown",
+                      "medical",
+                      "security",
+                      "fire",
+                      "other",
+                    ],
+                  },
+                  description: { type: "string" },
+                  reportedAt: { type: "string", format: "date-time" },
+                  status: {
+                    type: "string",
+                    enum: ["active", "resolved", "escalated"],
+                  },
+                },
+              },
+            },
+          },
+          performance: {
+            type: "object",
+            properties: {
+              averageSpeed: { type: "number", default: 0 },
+              maxSpeed: { type: "number", default: 0 },
+              totalDistance: {
+                type: "number",
+                default: 0,
+                description: "Total distance in km",
+              },
+              totalDrivingTime: {
+                type: "number",
+                default: 0,
+                description: "Total driving time in minutes",
+              },
+              fuelEfficiency: {
+                type: "number",
+                default: 0,
+                description: "Fuel efficiency in km/liter",
+              },
+              stopTime: {
+                type: "number",
+                default: 0,
+                description: "Total stop time in minutes",
+              },
+              routeDeviations: { type: "number", default: 0 },
+              speedViolations: { type: "number", default: 0 },
+            },
+          },
+          connectivity: {
+            type: "object",
+            properties: {
+              lastHeartbeat: { type: "string", format: "date-time" },
+              signalStrength: { type: "number", minimum: 0, maximum: 100 },
+              deviceInfo: {
+                type: "object",
+                properties: {
+                  deviceId: { type: "string" },
+                  model: { type: "string" },
+                  os: { type: "string" },
+                  appVersion: { type: "string" },
+                  batteryLevel: { type: "number", minimum: 0, maximum: 100 },
+                },
+              },
+              connectionType: {
+                type: "string",
+                enum: ["4G", "3G", "2G", "WiFi", "Offline"],
+                default: "4G",
+              },
+              isOnline: { type: "boolean", default: true },
+              lastOnlineAt: { type: "string", format: "date-time" },
+            },
+          },
+          settings: {
+            type: "object",
+            properties: {
+              updateInterval: {
+                type: "number",
+                minimum: 10,
+                maximum: 300,
+                default: 30,
+                description: "Update interval in seconds",
+              },
+              trackingAccuracy: {
+                type: "string",
+                enum: ["high", "medium", "low", "battery_saving"],
+                default: "high",
+              },
+              alertsEnabled: { type: "boolean", default: true },
+              shareLocation: { type: "boolean", default: true },
+            },
+          },
+          metadata: {
+            type: "object",
+            properties: {
+              startTime: { type: "string", format: "date-time" },
+              endTime: { type: "string", format: "date-time" },
+              totalDuration: {
+                type: "number",
+                description: "Total duration in minutes",
+              },
+              dataPoints: { type: "number", default: 0 },
+              lastDataReceived: { type: "string", format: "date-time" },
+              version: { type: "string", default: "1.0" },
+            },
+          },
+          createdBy: {
+            type: "string",
+            format: "objectId",
+            description: "Reference to User document",
+          },
+          currentDuration: {
+            type: "number",
+            description: "Virtual field for tracking duration in minutes",
+          },
+          isCurrentlyOnline: {
+            type: "boolean",
+            description: "Virtual field for online status",
+          },
+          inEmergency: {
+            type: "boolean",
+            description: "Virtual field for emergency status",
+          },
+        },
+        required: [
+          "trackingId",
+          "trip",
+          "bus",
+          "route",
+          "driver",
+          "realTimeData",
+          "metadata",
+          "createdBy",
+        ],
+      },
+      StartTrackingRequest: {
+        type: "object",
+        properties: {
+          trip: {
+            type: "string",
+            format: "objectId",
+            example: "60c72b2f9b1e8a1b8c8d4f56",
+          },
+          bus: {
+            type: "string",
+            format: "objectId",
+            example: "60c72b2f9b1e8a1b8c8d4f57",
+          },
+          driver: {
+            type: "object",
+            properties: {
+              name: { type: "string", maxLength: 100, example: "John Doe" },
+              contactNumber: {
+                type: "string",
+                pattern: "^(\\+94|0)[0-9]{9}$",
+                example: "+94123456789",
+              },
+              driverId: { type: "string", example: "DRV12345" },
+            },
+            required: ["name", "contactNumber"],
+          },
+          realTimeData: {
+            type: "object",
+            properties: {
+              coordinates: {
+                type: "array",
+                items: { type: "number" },
+                minItems: 2,
+                maxItems: 2,
+                example: [79.85, 6.93],
+              },
+              speed: { type: "number", minimum: 0, maximum: 120 },
+              heading: { type: "number", minimum: 0, maximum: 359 },
+              altitude: { type: "number", minimum: -100, maximum: 3000 },
+              accuracy: { type: "number", minimum: 0 },
+              timestamp: { type: "string", format: "date-time" },
+              address: { type: "string" },
+            },
+            required: ["coordinates", "timestamp"],
+          },
+          settings: {
+            type: "object",
+            properties: {
+              updateInterval: {
+                type: "number",
+                minimum: 10,
+                maximum: 300,
+                default: 30,
+              },
+              trackingAccuracy: {
+                type: "string",
+                enum: ["high", "medium", "low", "battery_saving"],
+                default: "high",
+              },
+              alertsEnabled: { type: "boolean", default: true },
+              shareLocation: { type: "boolean", default: true },
+            },
+          },
+        },
+        required: ["trip", "bus", "driver", "realTimeData"],
+      },
+      UpdateLocationRequest: {
+        type: "object",
+        properties: {
+          coordinates: {
+            type: "array",
+            items: { type: "number" },
+            minItems: 2,
+            maxItems: 2,
+            example: [79.85, 6.93],
+          },
+          speed: { type: "number", minimum: 0, maximum: 120 },
+          heading: { type: "number", minimum: 0, maximum: 359 },
+          altitude: { type: "number", minimum: -100, maximum: 3000 },
+          accuracy: { type: "number", minimum: 0 },
+          timestamp: { type: "string", format: "date-time" },
+          address: { type: "string" },
+        },
+        required: ["coordinates", "timestamp"],
+      },
+      EmergencyRequest: {
+        type: "object",
+        properties: {
+          type: {
+            type: "string",
+            enum: [
+              "accident",
+              "breakdown",
+              "medical",
+              "security",
+              "fire",
+              "other",
+            ],
+          },
+          description: { type: "string", maxLength: 500 },
+          severity: {
+            type: "string",
+            enum: ["low", "medium", "high", "critical"],
+            default: "critical",
+          },
+          location: {
+            type: "object",
+            properties: {
+              coordinates: {
+                type: "array",
+                items: { type: "number" },
+                minItems: 2,
+                maxItems: 2,
+              },
+              address: { type: "string" },
+            },
+          },
+        },
+        required: ["type", "description"],
+      },
+      AlertRequest: {
+        type: "object",
+        properties: {
+          type: {
+            type: "string",
+            enum: [
+              "speed_violation",
+              "route_deviation",
+              "geofence_entry",
+              "geofence_exit",
+              "emergency_button",
+              "engine_issue",
+              "fuel_low",
+              "maintenance_due",
+              "communication_loss",
+            ],
+          },
+          severity: {
+            type: "string",
+            enum: ["low", "medium", "high", "critical"],
+          },
+          message: { type: "string", maxLength: 500 },
+          location: {
+            type: "object",
+            properties: {
+              coordinates: {
+                type: "array",
+                items: { type: "number" },
+                minItems: 2,
+                maxItems: 2,
+              },
+              address: { type: "string" },
+            },
+          },
+          metadata: { type: "object" },
+        },
+        required: ["type", "severity", "message"],
+      },
+      UpdateSettingsRequest: {
+        type: "object",
+        properties: {
+          updateInterval: {
+            type: "number",
+            minimum: 10,
+            maximum: 300,
+            description: "Update interval in seconds",
+          },
+          trackingAccuracy: {
+            type: "string",
+            enum: ["high", "medium", "low", "battery_saving"],
+          },
+          alertsEnabled: { type: "boolean" },
+          shareLocation: { type: "boolean" },
+        },
+        minProperties: 1,
+      },
+      HeartbeatRequest: {
+        type: "object",
+        properties: {
+          deviceInfo: {
+            type: "object",
+            properties: {
+              deviceId: { type: "string" },
+              model: { type: "string" },
+              os: { type: "string" },
+              appVersion: { type: "string" },
+              batteryLevel: { type: "number", minimum: 0, maximum: 100 },
+            },
+          },
+          signalStrength: { type: "number", minimum: 0, maximum: 100 },
+          batteryLevel: { type: "number", minimum: 0, maximum: 100 },
+          connectionType: {
+            type: "string",
+            enum: ["4G", "3G", "2G", "WiFi", "Offline"],
+          },
+        },
+      },
+      PauseResumeRequest: {
+        type: "object",
+        properties: {
+          reason: { type: "string", maxLength: 200 },
+        },
+      },
+      EmergencyResolutionRequest: {
+        type: "object",
+        properties: {
+          resolution: { type: "string", maxLength: 500 },
+          notes: { type: "string", maxLength: 1000 },
+        },
+        required: ["resolution"],
+      },
+      CleanupRequest: {
+        type: "object",
+        properties: {
+          days: {
+            type: "number",
+            minimum: 7,
+            maximum: 365,
+            default: 30,
+            description: "Days to retain data",
+          },
+          dryRun: { type: "boolean", default: false },
+        },
+      },
+      SuccessResponse: {
+        type: "object",
+        properties: {
+          success: { type: "boolean", default: true },
+          message: { type: "string" },
+          data: { type: "object" },
+        },
+        required: ["success", "message", "data"],
+      },
+      ErrorResponse: {
+        type: "object",
+        properties: {
+          success: { type: "boolean", default: false },
+          error: { type: "string" },
+          message: { type: "string" },
+        },
+        required: ["success", "error", "message"],
       },
     },
   },
@@ -7469,6 +8144,1963 @@ const openapiSpecification = {
         },
       },
     },
+    "/tracking/nearby": {
+      get: {
+        summary: "Find buses near a location",
+        description:
+          "Retrieves buses within a specified radius of a given location (for commuters)",
+        tags: ["Public/Commuter"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "query",
+            name: "latitude",
+            schema: { type: "number", minimum: 5.9, maximum: 9.9 },
+            required: true,
+            description: "Latitude within Sri Lanka bounds",
+          },
+          {
+            in: "query",
+            name: "longitude",
+            schema: { type: "number", minimum: 79.6, maximum: 81.9 },
+            required: true,
+            description: "Longitude within Sri Lanka bounds",
+          },
+          {
+            in: "query",
+            name: "radius",
+            schema: { type: "number", minimum: 1, maximum: 200, default: 50 },
+            description: "Radius in kilometers",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        buses: {
+                          type: "array",
+                          items: { $ref: "#/components/schemas/Tracking" },
+                        },
+                        count: { type: "number" },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid latitude or longitude",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/trip/{tripId}": {
+      get: {
+        summary: "Get tracking data for a specific trip",
+        description: "Retrieves tracking data associated with a specific trip",
+        tags: ["Public/Commuter"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "tripId",
+            schema: { type: "string", format: "objectId" },
+            required: true,
+            description: "ID of the trip",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: { $ref: "#/components/schemas/Tracking" },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Trip not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/{trackingId}/status": {
+      get: {
+        summary: "Get current tracking status",
+        description: "Retrieves the current status of a tracking session",
+        tags: ["Public/Commuter"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "trackingId",
+            schema: { type: "string", pattern: "^TRK-\\d{8}-\\d{6}$" },
+            required: true,
+            description: "Tracking ID",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        status: {
+                          type: "string",
+                          enum: [
+                            "active",
+                            "paused",
+                            "stopped",
+                            "completed",
+                            "emergency",
+                            "offline",
+                          ],
+                        },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Tracking session not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/{trackingId}/history": {
+      get: {
+        summary: "Get location history for a tracking session",
+        description: "Retrieves the location history for a tracking session",
+        tags: ["Public/Commuter"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "trackingId",
+            schema: { type: "string", pattern: "^TRK-\\d{8}-\\d{6}$" },
+            required: true,
+            description: "Tracking ID",
+          },
+          {
+            in: "query",
+            name: "hours",
+            schema: { type: "number", default: 24 },
+            description: "Number of hours to retrieve history for",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          location: {
+                            type: "object",
+                            properties: {
+                              type: { type: "string", enum: ["Point"] },
+                              coordinates: {
+                                type: "array",
+                                items: { type: "number" },
+                                minItems: 2,
+                                maxItems: 2,
+                              },
+                            },
+                          },
+                          speed: { type: "number" },
+                          heading: { type: "number" },
+                          altitude: { type: "number" },
+                          accuracy: { type: "number" },
+                          timestamp: { type: "string", format: "date-time" },
+                          address: { type: "string" },
+                          distanceFromPrevious: { type: "number" },
+                          timeSinceLastUpdate: { type: "number" },
+                        },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Tracking session not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/start": {
+      post: {
+        summary: "Start a new tracking session",
+        description: "Creates a new tracking session for a bus operator",
+        tags: ["Bus Operator"],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/StartTrackingRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: { $ref: "#/schemas/Tracking" },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid request data",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden (not a bus operator or admin)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/{trackingId}/location": {
+      put: {
+        summary: "Update current location",
+        description: "Updates the current location of a tracking session",
+        tags: ["Bus Operator"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "trackingId",
+            schema: { type: "string", pattern: "^TRK-\\d{8}-\\d{6}$" },
+            required: true,
+            description: "Tracking ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateLocationRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        trackingId: { type: "string" },
+                        currentLocation: {
+                          type: "object",
+                          properties: {
+                            type: { type: "string", enum: ["Point"] },
+                            coordinates: {
+                              type: "array",
+                              items: { type: "number" },
+                              minItems: 2,
+                              maxItems: 2,
+                            },
+                          },
+                        },
+                        speed: { type: "number" },
+                        timestamp: { type: "string", format: "date-time" },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid request data",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Tracking session not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/{trackingId}/heartbeat": {
+      put: {
+        summary: "Update heartbeat",
+        description: "Updates the keep-alive signal for a tracking session",
+        tags: ["Bus Operator"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "trackingId",
+            schema: { type: "string", pattern: "^TRK-\\d{8}-\\d{6}$" },
+            required: true,
+            description: "Tracking ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/HeartbeatRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        trackingId: { type: "string" },
+                        timestamp: { type: "string", format: "date-time" },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Tracking session not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/{trackingId}/stop": {
+      post: {
+        summary: "Stop tracking session",
+        description: "Stops a tracking session",
+        tags: ["Bus Operator"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "trackingId",
+            schema: { type: "string", pattern: "^TRK-\\d{8}-\\d{6}$" },
+            required: true,
+            description: "Tracking ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/PauseResumeRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: { type: "object" },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Tracking session not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/{trackingId}/pause": {
+      put: {
+        summary: "Pause tracking session",
+        description: "Pauses a tracking session",
+        tags: ["Bus Operator"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "trackingId",
+            schema: { type: "string", pattern: "^TRK-\\d{8}-\\d{6}$" },
+            required: true,
+            description: "Tracking ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/PauseResumeRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        trackingId: { type: "string" },
+                        status: { type: "string", enum: ["paused"] },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Tracking session not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/{trackingId}/resume": {
+      put: {
+        summary: "Resume tracking session",
+        description: "Resumes a paused tracking session",
+        tags: ["Bus Operator"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "trackingId",
+            schema: { type: "string", pattern: "^TRK-\\d{8}-\\d{6}$" },
+            required: true,
+            description: "Tracking ID",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        trackingId: { type: "string" },
+                        status: { type: "string", enum: ["active"] },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Tracking session not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/{trackingId}/emergency": {
+      post: {
+        summary: "Trigger emergency alert",
+        description: "Triggers an emergency alert for a tracking session",
+        tags: ["Bus Operator"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "trackingId",
+            schema: { type: "string", pattern: "^TRK-\\d{8}-\\d{6}$" },
+            required: true,
+            description: "Tracking ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/EmergencyRequest" },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: "Emergency triggered successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        trackingId: { type: "string" },
+                        emergencyStatus: { type: "boolean" },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid request data",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Tracking session not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/{trackingId}/emergency/resolve": {
+      put: {
+        summary: "Resolve emergency",
+        description: "Resolves an active emergency for a tracking session",
+        tags: ["Bus Operator"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "trackingId",
+            schema: { type: "string", pattern: "^TRK-\\d{8}-\\d{6}$" },
+            required: true,
+            description: "Tracking ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/EmergencyResolutionRequest",
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        trackingId: { type: "string" },
+                        emergencyStatus: { type: "boolean" },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid request data",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Tracking session not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/{trackingId}/alerts": {
+      post: {
+        summary: "Add a tracking alert",
+        description: "Adds a new alert to a tracking session",
+        tags: ["Bus Operator"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "trackingId",
+            schema: { type: "string", pattern: "^TRK-\\d{8}-\\d{6}$" },
+            required: true,
+            description: "Tracking ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/AlertRequest" },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: "Alert added successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        trackingId: { type: "string" },
+                        alertsCount: { type: "number" },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid request data",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Tracking session not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/{trackingId}/alerts/{alertId}/acknowledge": {
+      put: {
+        summary: "Acknowledge an alert",
+        description: "Acknowledges an alert in a tracking session",
+        tags: ["Bus Operator"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "trackingId",
+            schema: { type: "string", pattern: "^TRK-\\d{8}-\\d{6}$" },
+            required: true,
+            description: "Tracking ID",
+          },
+          {
+            in: "path",
+            name: "alertId",
+            schema: { type: "string" },
+            required: true,
+            description: "Alert ID",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        trackingId: { type: "string" },
+                        alertId: { type: "string" },
+                        acknowledgedAt: { type: "string", format: "date-time" },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Alert or tracking session not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/my-sessions": {
+      get: {
+        summary: "Get operator's own tracking sessions",
+        description:
+          "Retrieves tracking sessions for the authenticated bus operator",
+        tags: ["Bus Operator"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "query",
+            name: "page",
+            schema: { type: "number", minimum: 1, default: 1 },
+          },
+          {
+            in: "query",
+            name: "limit",
+            schema: { type: "number", minimum: 1, maximum: 100, default: 10 },
+          },
+          {
+            in: "query",
+            name: "status",
+            schema: {
+              type: "string",
+              enum: [
+                "active",
+                "paused",
+                "stopped",
+                "completed",
+                "emergency",
+                "offline",
+              ],
+            },
+          },
+          {
+            in: "query",
+            name: "busId",
+            schema: { type: "string", format: "objectId" },
+          },
+          {
+            in: "query",
+            name: "routeId",
+            schema: { type: "string", format: "objectId" },
+          },
+          {
+            in: "query",
+            name: "tripId",
+            schema: { type: "string", format: "objectId" },
+          },
+          { in: "query", name: "driverId", schema: { type: "string" } },
+          {
+            in: "query",
+            name: "dateFrom",
+            schema: { type: "string", format: "date-time" },
+          },
+          {
+            in: "query",
+            name: "dateTo",
+            schema: { type: "string", format: "date-time" },
+          },
+          { in: "query", name: "isOnline", schema: { type: "boolean" } },
+          { in: "query", name: "inEmergency", schema: { type: "boolean" } },
+          {
+            in: "query",
+            name: "nearLatitude",
+            schema: { type: "number", minimum: 5.9, maximum: 9.9 },
+          },
+          {
+            in: "query",
+            name: "nearLongitude",
+            schema: { type: "number", minimum: 79.6, maximum: 81.9 },
+          },
+          {
+            in: "query",
+            name: "radiusKm",
+            schema: { type: "number", minimum: 1, maximum: 200, default: 50 },
+          },
+          { in: "query", name: "search", schema: { type: "string" } },
+          {
+            in: "query",
+            name: "sortBy",
+            schema: {
+              type: "string",
+              enum: [
+                "realTimeData.timestamp",
+                "metadata.startTime",
+                "performance.averageSpeed",
+                "performance.totalDistance",
+                "trackingId",
+              ],
+              default: "realTimeData.timestamp",
+            },
+          },
+          {
+            in: "query",
+            name: "sortOrder",
+            schema: { type: "string", enum: ["asc", "desc"], default: "desc" },
+          },
+        ],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        trackingSessions: {
+                          type: "array",
+                          items: { $ref: "#/components/schemas/Tracking" },
+                        },
+                        count: { type: "number" },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden (not a bus operator)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking": {
+      get: {
+        summary: "Get all tracking sessions with filters",
+        description: "Retrieves all tracking sessions with optional filters",
+        tags: ["NTC Admin"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "query",
+            name: "page",
+            schema: { type: "number", minimum: 1, default: 1 },
+          },
+          {
+            in: "query",
+            name: "limit",
+            schema: { type: "number", minimum: 1, maximum: 100, default: 10 },
+          },
+          {
+            in: "query",
+            name: "status",
+            schema: {
+              type: "string",
+              enum: [
+                "active",
+                "paused",
+                "stopped",
+                "completed",
+                "emergency",
+                "offline",
+              ],
+            },
+          },
+          {
+            in: "query",
+            name: "busId",
+            schema: { type: "string", format: "objectId" },
+          },
+          {
+            in: "query",
+            name: "routeId",
+            schema: { type: "string", format: "objectId" },
+          },
+          {
+            in: "query",
+            name: "tripId",
+            schema: { type: "string", format: "objectId" },
+          },
+          { in: "query", name: "driverId", schema: { type: "string" } },
+          {
+            in: "query",
+            name: "dateFrom",
+            schema: { type: "string", format: "date-time" },
+          },
+          {
+            in: "query",
+            name: "dateTo",
+            schema: { type: "string", format: "date-time" },
+          },
+          { in: "query", name: "isOnline", schema: { type: "boolean" } },
+          { in: "query", name: "inEmergency", schema: { type: "boolean" } },
+          {
+            in: "query",
+            name: "nearLatitude",
+            schema: { type: "number", minimum: 5.9, maximum: 9.9 },
+          },
+          {
+            in: "query",
+            name: "nearLongitude",
+            schema: { type: "number", minimum: 79.6, maximum: 81.9 },
+          },
+          {
+            in: "query",
+            name: "radiusKm",
+            schema: { type: "number", minimum: 1, maximum: 200, default: 50 },
+          },
+          { in: "query", name: "search", schema: { type: "string" } },
+          {
+            in: "query",
+            name: "sortBy",
+            schema: {
+              type: "string",
+              enum: [
+                "realTimeData.timestamp",
+                "metadata.startTime",
+                "performance.averageSpeed",
+                "performance.totalDistance",
+                "trackingId",
+              ],
+              default: "realTimeData.timestamp",
+            },
+          },
+          {
+            in: "query",
+            name: "sortOrder",
+            schema: { type: "string", enum: ["asc", "desc"], default: "desc" },
+          },
+        ],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        trackingSessions: {
+                          type: "array",
+                          items: { $ref: "#/components/schemas/Tracking" },
+                        },
+                        pagination: {
+                          type: "object",
+                          properties: {
+                            page: { type: "number" },
+                            limit: { type: "number" },
+                            total: { type: "number" },
+                          },
+                        },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden (not an admin)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/active": {
+      get: {
+        summary: "Get active tracking sessions",
+        description: "Retrieves all active tracking sessions",
+        tags: ["NTC Admin"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "query",
+            name: "page",
+            schema: { type: "number", minimum: 1, default: 1 },
+          },
+          {
+            in: "query",
+            name: "limit",
+            schema: { type: "number", minimum: 1, maximum: 100, default: 10 },
+          },
+        ],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        trackingSessions: {
+                          type: "array",
+                          items: { $ref: "#/components/schemas/Tracking" },
+                        },
+                        pagination: {
+                          type: "object",
+                          properties: {
+                            page: { type: "number" },
+                            limit: { type: "number" },
+                            total: { type: "number" },
+                          },
+                        },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden (not an admin)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/dashboard": {
+      get: {
+        summary: "Get real-time dashboard data",
+        description: "Retrieves real-time dashboard data for tracking sessions",
+        tags: ["NTC Admin"],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: { type: "object" },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden (not an admin)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/offline": {
+      get: {
+        summary: "Get offline buses",
+        description: "Retrieves buses that are currently offline",
+        tags: ["NTC Admin"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "query",
+            name: "minutes",
+            schema: { type: "number", default: 10 },
+            description: "Number of minutes to consider a bus offline",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        offlineBuses: {
+                          type: "array",
+                          items: { $ref: "#/components/schemas/Tracking" },
+                        },
+                        count: { type: "number" },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden (not an admin)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/analytics": {
+      get: {
+        summary: "Get tracking analytics",
+        description: "Retrieves analytics data for tracking sessions",
+        tags: ["NTC Admin"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "query",
+            name: "dateFrom",
+            schema: { type: "string", format: "date-time" },
+          },
+          {
+            in: "query",
+            name: "dateTo",
+            schema: { type: "string", format: "date-time" },
+          },
+          {
+            in: "query",
+            name: "groupBy",
+            schema: {
+              type: "string",
+              enum: ["hour", "day", "week", "month", "status", "route"],
+              default: "day",
+            },
+          },
+          {
+            in: "query",
+            name: "operatorId",
+            schema: { type: "string", format: "objectId" },
+          },
+          {
+            in: "query",
+            name: "routeId",
+            schema: { type: "string", format: "objectId" },
+          },
+        ],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: { type: "object" },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden (not an admin)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/{trackingId}": {
+      get: {
+        summary: "Get tracking session by ID",
+        description: "Retrieves a specific tracking session by its ID",
+        tags: ["NTC Admin"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "trackingId",
+            schema: { type: "string", pattern: "^TRK-\\d{8}-\\d{6}$" },
+            required: true,
+            description: "Tracking ID",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: { $ref: "#/components/schemas/Tracking" },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden (not an admin)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Tracking session not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/{trackingId}/metrics": {
+      get: {
+        summary: "Get performance metrics",
+        description: "Retrieves performance metrics for a tracking session",
+        tags: ["NTC Admin"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "trackingId",
+            schema: { type: "string", pattern: "^TRK-\\d{8}-\\d{6}$" },
+            required: true,
+            description: "Tracking ID",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        averageSpeed: { type: "number" },
+                        maxSpeed: { type: "number" },
+                        totalDistance: { type: "number" },
+                        totalDrivingTime: { type: "number" },
+                        fuelEfficiency: { type: "number" },
+                        stopTime: { type: "number" },
+                        routeDeviations: { type: "number" },
+                        speedViolations: { type: "number" },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden (not an admin)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Tracking session not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/{trackingId}/settings": {
+      put: {
+        summary: "Update tracking settings",
+        description: "Updates the settings for a tracking session",
+        tags: ["NTC Admin"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "trackingId",
+            schema: { type: "string", pattern: "^TRK-\\d{8}-\\d{6}$" },
+            required: true,
+            description: "Tracking ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateSettingsRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        trackingId: { type: "string" },
+                        settings: {
+                          type: "object",
+                          properties: {
+                            updateInterval: { type: "number" },
+                            trackingAccuracy: { type: "string" },
+                            alertsEnabled: { type: "boolean" },
+                            shareLocation: { type: "boolean" },
+                          },
+                        },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid request data",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden (not an admin)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Tracking session not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/operator/{operatorId}": {
+      get: {
+        summary: "Get tracking sessions by operator",
+        description: "Retrieves tracking sessions for a specific operator",
+        tags: ["NTC Admin"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            in: "path",
+            name: "operatorId",
+            schema: { type: "string", format: "objectId" },
+            required: true,
+            description: "Operator ID",
+          },
+          {
+            in: "query",
+            name: "page",
+            schema: { type: "number", minimum: 1, default: 1 },
+          },
+          {
+            in: "query",
+            name: "limit",
+            schema: { type: "number", minimum: 1, maximum: 100, default: 10 },
+          },
+        ],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        trackingSessions: {
+                          type: "array",
+                          items: { $ref: "#/components/schemas/Tracking" },
+                        },
+                        count: { type: "number" },
+                      },
+                    },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden (not an admin)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          404: {
+            description: "Operator not found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/cleanup": {
+      post: {
+        summary: "Clean up old tracking data",
+        description:
+          "Cleans up tracking data older than the specified number of days",
+        tags: ["NTC Admin"],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CleanupRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: { type: "object" },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid request data",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden (not an admin)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/tracking/process-offline": {
+      post: {
+        summary: "Process offline buses",
+        description: "Processes buses that are currently offline",
+        tags: ["NTC Admin"],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: "Successful response",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", default: true },
+                    message: { type: "string" },
+                    data: { type: "object" },
+                  },
+                  required: ["success", "message", "data"],
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          403: {
+            description: "Forbidden (not an admin)",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
   },
   tags: [
     { name: "System", description: "System endpoints" },
@@ -7490,6 +10122,21 @@ const openapiSpecification = {
       name: "Admin Trips",
       description:
         "Endpoints for administrative trip operations, restricted to admin users only.",
+    },
+    {
+      name: "Public/Commuter",
+      description:
+        "Endpoints accessible to authenticated users (commuters) for tracking buses",
+    },
+    {
+      name: "Bus Operator",
+      description:
+        "Endpoints for bus operators to manage tracking sessions and alerts",
+    },
+    {
+      name: "NTC Admin",
+      description:
+        "Administrative endpoints for managing and monitoring tracking sessions",
     },
   ],
 };

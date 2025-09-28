@@ -343,8 +343,8 @@ const busSchema = new mongoose.Schema(
 );
 
 // Indexes for better performance
-busSchema.index({ registrationNumber: 1 });
-busSchema.index({ permitNumber: 1 });
+// busSchema.index({ registrationNumber: 1 });
+// busSchema.index({ permitNumber: 1 });
 busSchema.index({ "operationalDetails.operator": 1 });
 busSchema.index({ "operationalDetails.assignedRoute": 1 });
 busSchema.index({ status: 1 });
