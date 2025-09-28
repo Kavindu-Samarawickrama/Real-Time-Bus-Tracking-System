@@ -213,6 +213,117 @@ class TripService {
       // Use the model's updateStatus method
       const updatedTrip = await trip.updateStatus(status, updateData);
 
+      // Send notifications for important status changes
+      try {
+        const route = await routeRepository.findById(trip.route);
+
+        if (status === "delayed") {
+          // Notify about delays
+          const delayMinutes = updateData.delayMinutes || "Unknown";
+          await notificationService.createNotification(
+            {
+              type: "trip_delay",
+              priority: delayMinutes > 30 ? "high" : "normal",
+              title: "Trip Delayed",
+              message: `Trip ${trip.tripNumber} on route ${route.routeNumber} (${route.origin.city} → ${route.destination.city}) has been delayed by ${delayMinutes} minutes.`,
+              recipients: {
+                groups: ["route_subscribers", "commuters"],
+              },
+              relatedData: {
+                trip: trip._id,
+                route: trip.route,
+                bus: trip.bus,
+              },
+              metadata: {
+                source: "automated",
+                category: "trip_status",
+              },
+            },
+            updatedBy
+          );
+        } else if (status === "cancelled") {
+          // Notify about cancellations
+          await notificationService.createNotification(
+            {
+              type: "trip_cancellation",
+              priority: "high",
+              title: "Trip Cancelled",
+              message: `Trip ${trip.tripNumber} on route ${
+                route.routeNumber
+              } (${route.origin.city} → ${
+                route.destination.city
+              }) has been cancelled. ${
+                updateData.reason ? `Reason: ${updateData.reason}` : ""
+              }`,
+              recipients: {
+                groups: ["route_subscribers", "commuters"],
+              },
+              relatedData: {
+                trip: trip._id,
+                route: trip.route,
+                bus: trip.bus,
+              },
+              metadata: {
+                source: "automated",
+                category: "trip_status",
+              },
+            },
+            updatedBy
+          );
+        } else if (status === "departed") {
+          // Notify about departures
+          await notificationService.createNotification(
+            {
+              type: "trip_departure",
+              priority: "normal",
+              title: "Trip Departed",
+              message: `Trip ${trip.tripNumber} has departed from ${route.origin.city} and is on its way to ${route.destination.city}.`,
+              recipients: {
+                groups: ["route_subscribers"],
+              },
+              relatedData: {
+                trip: trip._id,
+                route: trip.route,
+                bus: trip.bus,
+              },
+              metadata: {
+                source: "automated",
+                category: "trip_status",
+              },
+            },
+            updatedBy
+          );
+        } else if (status === "arrived") {
+          // Notify about arrivals
+          await notificationService.createNotification(
+            {
+              type: "trip_arrival",
+              priority: "normal",
+              title: "Trip Arrived",
+              message: `Trip ${trip.tripNumber} has arrived at ${route.destination.city}.`,
+              recipients: {
+                groups: ["route_subscribers"],
+              },
+              relatedData: {
+                trip: trip._id,
+                route: trip.route,
+                bus: trip.bus,
+              },
+              metadata: {
+                source: "automated",
+                category: "trip_status",
+              },
+            },
+            updatedBy
+          );
+        }
+      } catch (notificationError) {
+        logger.warn(
+          "Failed to send trip status notification:",
+          notificationError
+        );
+      }
+
       logger.info(
         `Trip status updated: ${trip.tripNumber} → ${status} by user ${updatedBy}`
       );
@@ -423,6 +534,47 @@ class TripService {
       // Auto-update trip status for severe incidents
       if (incidentData.severity === "critical" && trip.status !== "cancelled") {
         await this.updateTripStatus(tripId, "delayed", {}, reportedBy);
+      }
+
+      // Send notifications for incidents
+      try {
+        const route = await routeRepository.findById(trip.route);
+        let priority = "normal";
+        let recipients = ["ntc_admins"];
+
+        if (incidentData.severity === "critical") {
+          priority = "critical";
+          recipients = ["ntc_admins", "route_subscribers"];
+        } else if (incidentData.severity === "high") {
+          priority = "high";
+          recipients = ["ntc_admins"];
+        }
+
+        await notificationService.createNotification(
+          {
+            type: "incident_report",
+            priority,
+            title: `Trip Incident - ${incidentData.type}`,
+            message: `Incident reported on trip ${trip.tripNumber} (${route.origin.city} → ${route.destination.city}): ${incidentData.description}`,
+            recipients: {
+              groups: recipients,
+            },
+            relatedData: {
+              trip: trip._id,
+              route: trip.route,
+              bus: trip.bus,
+              operator: trip.operator,
+              incident: incidentData._id,
+            },
+            metadata: {
+              source: "automated",
+              category: "incident",
+            },
+          },
+          reportedBy
+        );
+      } catch (notificationError) {
+        logger.warn("Failed to send incident notification:", notificationError);
       }
 
       logger.info(

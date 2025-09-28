@@ -4,6 +4,7 @@ const userRepository = require("../repositories/userRepository");
 const routeRepository = require("../repositories/routeRepository");
 const { ApiError } = require("../utils/errors");
 const logger = require("../utils/logger");
+const notificationService = require("./notificationService");
 
 class BusService {
   /**
@@ -73,6 +74,39 @@ class BusService {
       logger.info(
         `New bus created: ${bus.registrationNumber} by user ${createdBy}`
       );
+
+      // Send notification to NTC admins about new bus registration
+      try {
+        await notificationService.createNotification(
+          {
+            type: "system_announcement",
+            priority: "normal",
+            title: "New Bus Registration",
+            message: `A new bus (${
+              bus.registrationNumber
+            }) has been registered by ${
+              operator.organizationDetails?.companyName || "operator"
+            } and is pending approval.`,
+            recipients: {
+              groups: ["ntc_admins"],
+            },
+            relatedData: {
+              bus: bus._id,
+              operator: bus.operationalDetails.operator,
+            },
+            metadata: {
+              source: "automated",
+              category: "bus_management",
+            },
+          },
+          createdBy
+        );
+      } catch (notificationError) {
+        logger.warn(
+          "Failed to send bus registration notification:",
+          notificationError
+        );
+      }
 
       return bus;
     } catch (error) {
@@ -200,6 +234,76 @@ class BusService {
       }
 
       const updatedBus = await busRepository.updateById(busId, updateData);
+
+      // Send notifications based on status change
+      try {
+        if (status === "active" && bus.status === "pending_approval") {
+          // Notify operator about approval
+          await notificationService.createNotification(
+            {
+              type: "system_announcement",
+              priority: "normal",
+              title: "Bus Registration Approved",
+              message: `Your bus ${bus.registrationNumber} has been approved and is now active in the system.`,
+              recipients: {
+                users: [
+                  {
+                    user: bus.operationalDetails.operator,
+                    email: operator?.email || "operator@example.com",
+                    name: operator?.profile?.firstName
+                      ? `${operator.profile.firstName} ${
+                          operator.profile.lastName || ""
+                        }`
+                      : "Operator",
+                    role: "bus_operator",
+                  },
+                ],
+              },
+              relatedData: {
+                bus: bus._id,
+              },
+            },
+            updatedBy
+          );
+        } else if (status === "suspended") {
+          // Notify operator about suspension
+          await notificationService.createNotification(
+            {
+              type: "maintenance_notice",
+              priority: "high",
+              title: "Bus Suspended",
+              message: `Your bus ${
+                bus.registrationNumber
+              } has been suspended. ${
+                reason ? `Reason: ${reason}` : "Please contact NTC for details."
+              }`,
+              recipients: {
+                users: [
+                  {
+                    user: bus.operationalDetails.operator,
+                    email: operator?.email || "operator@example.com",
+                    name: operator?.profile?.firstName
+                      ? `${operator.profile.firstName} ${
+                          operator.profile.lastName || ""
+                        }`
+                      : "Operator",
+                    role: "bus_operator",
+                  },
+                ],
+              },
+              relatedData: {
+                bus: bus._id,
+              },
+            },
+            updatedBy
+          );
+        }
+      } catch (notificationError) {
+        logger.warn(
+          "Failed to send bus status notification:",
+          notificationError
+        );
+      }
 
       logger.info(
         `Bus status updated: ${

@@ -52,6 +52,43 @@ class RouteService {
         `New route created: ${route.routeNumber} (${route.origin.city} → ${route.destination.city}) by user ${createdBy}`
       );
 
+      // Send notification to operators about new route
+      try {
+        const operatorNotifications = operators.map((operator) => ({
+          user: operator._id,
+          email: operator.email,
+          name: operator.profile?.firstName
+            ? `${operator.profile.firstName} ${operator.profile.lastName || ""}`
+            : operator.email,
+          role: operator.role,
+        }));
+
+        await notificationService.createNotification(
+          {
+            type: "route_change",
+            priority: "normal",
+            title: "New Route Assigned",
+            message: `You have been assigned to operate route ${route.routeNumber} from ${route.origin.city} to ${route.destination.city}.`,
+            recipients: {
+              users: operatorNotifications,
+            },
+            relatedData: {
+              route: route._id,
+            },
+            metadata: {
+              source: "automated",
+              category: "route_management",
+            },
+          },
+          createdBy
+        );
+      } catch (notificationError) {
+        logger.warn(
+          "Failed to send route creation notification:",
+          notificationError
+        );
+      }
+
       return route;
     } catch (error) {
       logger.error("Route creation failed:", error);
@@ -162,6 +199,53 @@ class RouteService {
         routeId,
         updateData
       );
+
+      // Send notifications for route status changes
+      try {
+        if (status === "suspended" || status === "inactive") {
+          // Get operators for this route
+          const routeWithOperators = await routeRepository.findById(routeId);
+          const operatorNotifications = routeWithOperators.operatedBy.map(
+            (op) => ({
+              user: op._id,
+              email: op.email,
+              name: op.profile?.firstName
+                ? `${op.profile.firstName} ${op.profile.lastName || ""}`
+                : op.email,
+              role: op.role,
+            })
+          );
+
+          await notificationService.createNotification(
+            {
+              type: "route_change",
+              priority: "high",
+              title: `Route ${
+                status === "suspended" ? "Suspended" : "Deactivated"
+              }`,
+              message: `Route ${route.routeNumber} (${route.origin.city} → ${
+                route.destination.city
+              }) has been ${status}. ${
+                reason
+                  ? `Reason: ${reason}`
+                  : "Please check with NTC for details."
+              }`,
+              recipients: {
+                users: operatorNotifications,
+              },
+              relatedData: {
+                route: route._id,
+              },
+            },
+            updatedBy
+          );
+        }
+      } catch (notificationError) {
+        logger.warn(
+          "Failed to send route status notification:",
+          notificationError
+        );
+      }
 
       logger.info(
         `Route status updated: ${
