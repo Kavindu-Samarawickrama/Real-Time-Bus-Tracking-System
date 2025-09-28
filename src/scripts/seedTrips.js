@@ -57,6 +57,18 @@ const seedTrips = async () => {
     // Generate realistic trips for the next week
     const trips = [];
 
+    // Helper function to generate unique trip number
+    const generateTripNumber = (departureDate, index) => {
+      const dateStr = departureDate
+        .toISOString()
+        .slice(0, 10)
+        .replace(/-/g, "");
+      const tripIndex = (index + 1).toString().padStart(3, "0");
+      return `TRP-${dateStr}-${tripIndex}`;
+    };
+
+    let tripIndex = 0;
+
     // Create trips for each active bus-route combination
     for (let i = 0; i < Math.min(routes.length, buses.length, 25); i++) {
       const route = routes[i % routes.length];
@@ -73,7 +85,8 @@ const seedTrips = async () => {
           morningDeparture.getTime() + 3 * hoursInMs
         ); // 3 hours journey
 
-        trips.push({
+        const morningTripData = {
+          tripNumber: generateTripNumber(morningDeparture, tripIndex++),
           route: route._id,
           bus: bus._id,
           operator: operator._id,
@@ -152,7 +165,9 @@ const seedTrips = async () => {
             tags: ["morning", "weekday"],
           },
           createdBy: ntcAdmin._id,
-        });
+        };
+
+        trips.push(morningTripData);
 
         // Afternoon trip (if not weekend)
         if (day < 5) {
@@ -164,7 +179,8 @@ const seedTrips = async () => {
             afternoonDeparture.getTime() + 3 * hoursInMs
           );
 
-          trips.push({
+          const afternoonTripData = {
+            tripNumber: generateTripNumber(afternoonDeparture, tripIndex++),
             route: route._id,
             bus: bus._id,
             operator: operator._id,
@@ -241,40 +257,44 @@ const seedTrips = async () => {
               tags: ["afternoon", "weekday"],
             },
             createdBy: ntcAdmin._id,
-          });
+          };
+
+          trips.push(afternoonTripData);
         }
       }
 
-      // Limit to 25 trips total to avoid overwhelming the database
+      // Limit to avoid overwhelming the database
       if (trips.length >= 50) break;
     }
 
     // Add some trips with incidents for testing
-    const incidentTrip = {
-      ...trips[0],
-      status: "delayed",
-      incidents: [
-        {
-          timestamp: new Date(now.getTime() - 2 * hoursInMs),
-          type: "traffic_jam",
-          description: "Heavy traffic due to road construction near Kegalle",
-          location: {
-            coordinates: {
-              latitude: 7.2513,
-              longitude: 80.3464,
+    if (trips.length > 0) {
+      const incidentTrip = {
+        ...trips[0],
+        status: "delayed",
+        incidents: [
+          {
+            timestamp: new Date(now.getTime() - 2 * hoursInMs),
+            type: "traffic_jam",
+            description: "Heavy traffic due to road construction near Kegalle",
+            location: {
+              coordinates: {
+                latitude: 7.2513,
+                longitude: 80.3464,
+              },
+              address: "Kegalle Junction",
             },
-            address: "Kegalle Junction",
+            severity: "medium",
+            resolved: true,
+            resolvedAt: new Date(now.getTime() - hoursInMs),
+            reportedBy: ntcAdmin._id,
           },
-          severity: "medium",
-          resolved: true,
-          resolvedAt: new Date(now.getTime() - hoursInMs),
-          reportedBy: ntcAdmin._id,
-        },
-      ],
-    };
+        ],
+      };
 
-    // Replace first trip with incident trip
-    trips[0] = incidentTrip;
+      // Replace first trip with incident trip
+      trips[0] = incidentTrip;
+    }
 
     // Add a cancelled trip
     if (trips.length > 1) {
@@ -295,22 +315,75 @@ const seedTrips = async () => {
       };
     }
 
-    // Create trips
+    // Create trips with better error handling
     let createdCount = 0;
-    for (const tripData of trips) {
+    const errors = [];
+
+    for (let i = 0; i < trips.length; i++) {
+      const tripData = trips[i];
       try {
+        // Validate required fields before creating
+        if (!tripData.route || !tripData.bus || !tripData.operator) {
+          throw new Error(`Missing required references for trip ${i + 1}`);
+        }
+
+        if (
+          !tripData.schedule?.scheduledDeparture ||
+          !tripData.schedule?.scheduledArrival
+        ) {
+          throw new Error(`Missing schedule data for trip ${i + 1}`);
+        }
+
+        if (
+          !tripData.crew?.driver?.name ||
+          !tripData.crew?.driver?.licenseNumber ||
+          !tripData.crew?.driver?.contactNumber
+        ) {
+          throw new Error(`Missing driver data for trip ${i + 1}`);
+        }
+
+        if (
+          !tripData.capacity?.totalSeats ||
+          tripData.capacity.totalSeats < 10
+        ) {
+          throw new Error(`Invalid capacity data for trip ${i + 1}`);
+        }
+
+        if (!tripData.fare?.baseFare || tripData.fare.baseFare < 0) {
+          throw new Error(`Invalid fare data for trip ${i + 1}`);
+        }
+
         const trip = new Trip(tripData);
         await trip.save();
-
         createdCount++;
+
+        // Log progress every 10 trips
+        if (createdCount % 10 === 0) {
+          logger.info(`Created ${createdCount} trips...`);
+        }
       } catch (error) {
-        logger.error(`Failed to create trip:`, error.message);
+        const errorMsg = `Failed to create trip ${i + 1}: ${error.message}`;
+        logger.error(errorMsg);
+        errors.push(errorMsg);
       }
     }
 
     logger.info(
-      `Trip seeding completed successfully. Created ${createdCount} new trips.`
+      `Trip seeding completed. Created ${createdCount} out of ${trips.length} trips.`
     );
+
+    if (errors.length > 0) {
+      logger.info("Errors encountered:");
+      errors.forEach((error, index) => {
+        if (index < 5) {
+          // Show only first 5 errors to avoid log spam
+          logger.error(`  ${error}`);
+        }
+      });
+      if (errors.length > 5) {
+        logger.info(`  ... and ${errors.length - 5} more errors`);
+      }
+    }
 
     // Display summary statistics
     const [
@@ -364,6 +437,7 @@ const seedTrips = async () => {
     });
   } catch (error) {
     logger.error("Trip seeding failed:", error);
+    throw error;
   } finally {
     await mongoose.connection.close();
     process.exit(0);
@@ -372,7 +446,10 @@ const seedTrips = async () => {
 
 // Run seeding if this file is executed directly
 if (require.main === module) {
-  seedTrips();
+  seedTrips().catch((error) => {
+    console.error("Seeding process failed:", error);
+    process.exit(1);
+  });
 }
 
 module.exports = seedTrips;

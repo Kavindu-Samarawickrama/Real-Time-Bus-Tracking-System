@@ -385,7 +385,7 @@ const tripSchema = new mongoose.Schema(
 );
 
 // Indexes for better performance
-tripSchema.index({ tripNumber: 1 });
+// tripSchema.index({ tripNumber: 1 });
 tripSchema.index({ route: 1, "schedule.scheduledDeparture": 1 });
 tripSchema.index({ bus: 1, status: 1 });
 tripSchema.index({ operator: 1 });
