@@ -1,4 +1,4 @@
-name: CI - Docker Build and Push
+name: CI - Docker Build, Push and Deploy
 
 on:
   push:
@@ -59,6 +59,51 @@ jobs:
             exit 1
           fi
 
+      # Deploy to AWS EC2 (only on main branch)
+      - name: Deploy to AWS EC2
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          # Save SSH key to file
+          echo "$EC2_SSH_KEY" > ec2_key.pem
+          chmod 600 ec2_key.pem
+          
+          # Add EC2 host to known_hosts to avoid prompt
+          ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
+          
+          # SSH into EC2 and pull the latest Docker image
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_HOST << 'EOF'
+            echo "🚀 Deploying to EC2..."
+            
+            # Login to GitHub Container Registry
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # Pull the latest image
+            docker pull ghcr.io/${{ env.REPO_LOW }}:latest
+            
+            # Optional: Stop and remove old container (adjust container name as needed)
+            docker stop my-app-container || true
+            docker rm my-app-container || true
+            
+            # Run the new container (customize ports and environment as needed)
+            docker run -d \
+              --name my-app-container \
+              --restart unless-stopped \
+              -p 80:3000 \
+              ghcr.io/${{ env.REPO_LOW }}:latest
+            
+            # Clean up old images
+            docker image prune -af
+            
+            echo "✅ Deployment completed!"
+          EOF
+          
+          # Clean up SSH key
+          rm -f ec2_key.pem
+
       - name: Build Summary
         if: always()
         run: |
@@ -71,9 +116,10 @@ jobs:
             echo "- **Image Tags:**" >> $GITHUB_STEP_SUMMARY
             echo "  - \`ghcr.io/${{ env.REPO_LOW }}:latest\`" >> $GITHUB_STEP_SUMMARY
             echo "  - \`ghcr.io/${{ env.REPO_LOW }}:sha-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Deployed to EC2:** ✅" >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Notify on failure
         if: failure()
         run: |
-          echo "❌ Docker build or push failed! Check logs above."
+          echo "❌ Docker build, push, or deployment failed! Check logs above."
