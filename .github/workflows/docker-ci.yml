@@ -61,7 +61,7 @@ jobs:
 
       # Deploy to AWS EC2 (only on main branch)
       - name: Deploy to AWS EC2
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
