@@ -57,6 +57,7 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
           REPO_LOW: ${{ env.REPO_LOW }}
+          IMAGE_TAG: sha-${{ github.sha }}
         run: |
           # Save SSH key to file
           echo "$EC2_SSH_KEY" > ec2_key.pem
@@ -73,13 +74,14 @@ jobs:
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_HOST bash << ENDSSH
             set -e
             echo "🚀 Deploying to EC2..."
+            echo "📦 Image tag: $IMAGE_TAG"
             
             # Login to GitHub Container Registry
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             
-            # Pull the latest image
-            echo "Pulling image: ghcr.io/$REPO_LOW:latest"
-            docker pull ghcr.io/$REPO_LOW:latest
+            # Pull the specific SHA-tagged image
+            echo "Pulling image: ghcr.io/$REPO_LOW:$IMAGE_TAG"
+            docker pull ghcr.io/$REPO_LOW:$IMAGE_TAG
             
             # Stop and remove old container
             echo "Stopping old container..."
@@ -92,15 +94,15 @@ jobs:
               echo "Please create it with required environment variables."
             fi
             
-            # Run the new container with environment variables
-            echo "Starting new container..."
+            # Run the new container with the SHA-tagged image
+            echo "Starting new container with image: ghcr.io/$REPO_LOW:$IMAGE_TAG"
             docker run -d \
               --name bus-tracking-app \
               --restart unless-stopped \
               -p 80:3000 \
               --env-file /home/ubuntu/ntc-app/.env \
               -v /home/ubuntu/ntc-app/logs:/usr/src/app/logs \
-              ghcr.io/$REPO_LOW:latest
+              ghcr.io/$REPO_LOW:$IMAGE_TAG
             
             # Wait for container to start
             sleep 5
@@ -115,11 +117,12 @@ jobs:
               exit 1
             fi
             
-            # Clean up old images
+            # Clean up old images (keeps last 3)
             echo "Cleaning up old images..."
-            docker image prune -af
+            docker images ghcr.io/$REPO_LOW --format "{{.ID}} {{.CreatedAt}}" | tail -n +4 | awk '{print \$1}' | xargs -r docker rmi 2>/dev/null || true
             
             echo "✅ Deployment completed successfully!"
+            echo "📌 Deployed version: $IMAGE_TAG"
           ENDSSH
           
           # Clean up SSH key
@@ -139,6 +142,7 @@ jobs:
           echo "  - \`ghcr.io/${{ env.REPO_LOW }}:sha-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           if [[ "${{ github.event_name }}" == "push" ]]; then
             echo "- **Deployed to EC2:** ✅" >> $GITHUB_STEP_SUMMARY
+            echo "- **Deployed Version:** \`sha-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Notify on failure
