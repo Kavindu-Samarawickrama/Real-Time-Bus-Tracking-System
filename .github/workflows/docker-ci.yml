@@ -36,11 +36,84 @@ jobs:
           tags: ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |  # Optional: Pass build args if needed (e.g., for multi-stage)
+          build-args: |
             NODE_ENV=test
 
+      # NEW: Run tests inside the Docker container
+      - name: Run Unit Tests
+        run: |
+          docker run --rm \
+            ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }} \
+            npm test
+        continue-on-error: false
+
+      # NEW: Run linting checks
+      - name: Run Linting
+        run: |
+          docker run --rm \
+            ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }} \
+            npm run lint
+        continue-on-error: true  # Don't fail the build on linting errors
+
+      # NEW: Security vulnerability scan
+      - name: Run Security Audit
+        run: |
+          docker run --rm \
+            ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }} \
+            npm audit --audit-level=high
+        continue-on-error: true
+
+      # NEW: Test container health
+      - name: Test Container Health
+        run: |
+          # Start container in detached mode
+          docker run -d --name test-container \
+            -p 3000:3000 \
+            ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }}
+          
+          # Wait for container to be ready
+          sleep 5
+          
+          # Check if container is running
+          if docker ps | grep test-container; then
+            echo "✅ Container is running"
+          else
+            echo "❌ Container failed to start"
+            docker logs test-container
+            exit 1
+          fi
+          
+          # Test health endpoint (adjust URL as needed)
+          if curl -f http://localhost:3000/health || curl -f http://localhost:3000; then
+            echo "✅ Health check passed"
+          else
+            echo "⚠️ Health endpoint not responding (may need configuration)"
+          fi
+          
+          # Cleanup
+          docker stop test-container
+          docker rm test-container
+
+      # NEW: Scan for vulnerabilities with Trivy
+      - name: Run Trivy Security Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+        continue-on-error: true
+
+      - name: Upload Trivy Results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
+
+      # Push only after all tests pass
       - name: Push Docker image
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'  # Only on main branch pushes
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           docker tag ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }} ghcr.io/${{ env.REPO_LOW }}:latest
           docker tag ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }} ghcr.io/${{ env.REPO_LOW }}:sha-${{ github.sha }}
@@ -50,17 +123,27 @@ jobs:
       - name: Verify Image Push
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
-          # Wait a bit for GHCR propagation
           sleep 10
-          # Check if latest exists (simple curl; assumes public package)
-          if curl -s -f "https://ghcr.io/v2/kavindu-samarawickrama/real-time-bus-tracking-system/manifests/latest" > /dev/null; then
+          if curl -s -f "https://ghcr.io/v2/${{ env.REPO_LOW }}/manifests/latest" > /dev/null; then
             echo "✅ Image pushed and accessible!"
           else
             echo "❌ Push verification failed!"
             exit 1
           fi
 
+      # NEW: Create test summary
+      - name: Create Test Summary
+        if: always()
+        run: |
+          echo "## Test Results 📊" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Tag:** \`ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+
       - name: Notify on failure
         if: failure()
         run: |
-          echo "Docker build or test failed! Check logs above."
+          echo "❌ Docker build or test failed! Check logs above."
+          echo "Failed step: ${{ github.job }}"
