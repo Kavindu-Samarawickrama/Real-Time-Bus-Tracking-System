@@ -66,6 +66,9 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          REPO_LOW: ${{ env.REPO_LOW }}
         run: |
           # Save SSH key to file
           echo "$EC2_SSH_KEY" > ec2_key.pem
@@ -75,25 +78,25 @@ jobs:
           ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
           
           # SSH into EC2 and pull the latest Docker image
-          ssh -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_HOST << 'EOF'
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_HOST bash -s << EOF
             echo "🚀 Deploying to EC2..."
             
             # Login to GitHub Container Registry
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             
             # Pull the latest image
-            docker pull ghcr.io/${{ env.REPO_LOW }}:latest
+            docker pull ghcr.io/${REPO_LOW}:latest
             
-            # Optional: Stop and remove old container (adjust container name as needed)
-            docker stop my-app-container || true
-            docker rm my-app-container || true
+            # Stop and remove old container (adjust container name as needed)
+            docker stop bus-tracking-app || true
+            docker rm bus-tracking-app || true
             
             # Run the new container (customize ports and environment as needed)
             docker run -d \
-              --name my-app-container \
+              --name bus-tracking-app \
               --restart unless-stopped \
               -p 80:3000 \
-              ghcr.io/${{ env.REPO_LOW }}:latest
+              ghcr.io/${REPO_LOW}:latest
             
             # Clean up old images
             docker image prune -af
