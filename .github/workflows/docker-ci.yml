@@ -31,15 +31,22 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+          push: true  # Push on every branch
           tags: |
-            ghcr.io/${{ env.REPO_LOW }}:latest
-            ghcr.io/${{ env.REPO_LOW }}:sha-${{ github.sha }}
             ghcr.io/${{ env.REPO_LOW }}:${{ github.ref_name }}
+            ghcr.io/${{ env.REPO_LOW }}:sha-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
             NODE_ENV=production
+
+      # Tag as 'latest' only on main branch
+      - name: Tag as latest (main branch only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          docker buildx imagetools create \
+            ghcr.io/${{ env.REPO_LOW }}:${{ github.ref_name }} \
+            --tag ghcr.io/${{ env.REPO_LOW }}:latest
 
       - name: Verify Image Push
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
