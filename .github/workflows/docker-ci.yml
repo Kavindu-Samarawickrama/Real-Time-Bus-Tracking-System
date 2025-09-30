@@ -99,7 +99,7 @@ jobs:
             docker run -d \
               --name bus-tracking-app \
               --restart unless-stopped \
-              -p 80:3000 \
+              -p 3000:3000 \
               --env-file /home/ubuntu/ntc-app/.env \
               -v /home/ubuntu/ntc-app/logs:/usr/src/app/logs \
               ghcr.io/$REPO_LOW:$IMAGE_TAG
