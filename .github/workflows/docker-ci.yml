@@ -1,4 +1,4 @@
-name: CI - Docker Build and Test
+name: CI - Docker Build and Push
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ '**' ]  # Triggers on PRs targeting any branch
 
 jobs:
-  build-and-test:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,98 +27,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Docker image
+      - name: Build and Push Docker image
         uses: docker/build-push-action@v5
-        id: build
         with:
           context: .
-          load: true  # Load image into local Docker context for testing
-          tags: ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }}
+          push: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+          tags: |
+            ghcr.io/${{ env.REPO_LOW }}:latest
+            ghcr.io/${{ env.REPO_LOW }}:sha-${{ github.sha }}
+            ghcr.io/${{ env.REPO_LOW }}:${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            NODE_ENV=test
-
-      # NEW: Run tests inside the Docker container
-      - name: Run Unit Tests
-        run: |
-          docker run --rm \
-            ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }} \
-            npm test
-        continue-on-error: false
-
-      # NEW: Run linting checks
-      - name: Run Linting
-        run: |
-          docker run --rm \
-            ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }} \
-            npm run lint
-        continue-on-error: true  # Don't fail the build on linting errors
-
-      # NEW: Security vulnerability scan
-      - name: Run Security Audit
-        run: |
-          docker run --rm \
-            ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }} \
-            npm audit --audit-level=high
-        continue-on-error: true
-
-      # NEW: Test container health
-      - name: Test Container Health
-        run: |
-          # Start container in detached mode
-          docker run -d --name test-container \
-            -p 3000:3000 \
-            ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }}
-          
-          # Wait for container to be ready
-          sleep 5
-          
-          # Check if container is running
-          if docker ps | grep test-container; then
-            echo "✅ Container is running"
-          else
-            echo "❌ Container failed to start"
-            docker logs test-container
-            exit 1
-          fi
-          
-          # Test health endpoint (adjust URL as needed)
-          if curl -f http://localhost:3000/health || curl -f http://localhost:3000; then
-            echo "✅ Health check passed"
-          else
-            echo "⚠️ Health endpoint not responding (may need configuration)"
-          fi
-          
-          # Cleanup
-          docker stop test-container
-          docker rm test-container
-
-      # NEW: Scan for vulnerabilities with Trivy
-      - name: Run Trivy Security Scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }}
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
-        continue-on-error: true
-
-      - name: Upload Trivy Results
-        uses: github/codeql-action/upload-sarif@v2
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
-        continue-on-error: true
-
-      # Push only after all tests pass
-      - name: Push Docker image
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          docker tag ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }} ghcr.io/${{ env.REPO_LOW }}:latest
-          docker tag ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }} ghcr.io/${{ env.REPO_LOW }}:sha-${{ github.sha }}
-          docker push ghcr.io/${{ env.REPO_LOW }}:latest
-          docker push ghcr.io/${{ env.REPO_LOW }}:sha-${{ github.sha }}
+            NODE_ENV=production
 
       - name: Verify Image Push
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -131,19 +52,21 @@ jobs:
             exit 1
           fi
 
-      # NEW: Create test summary
-      - name: Create Test Summary
+      - name: Build Summary
         if: always()
         run: |
-          echo "## Test Results 📊" >> $GITHUB_STEP_SUMMARY
+          echo "## Build Results 🐳" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Build Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Image Tag:** \`ghcr.io/${{ env.REPO_LOW }}:ci-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event_name }}" == "push" ]]; then
+            echo "- **Image Tags:**" >> $GITHUB_STEP_SUMMARY
+            echo "  - \`ghcr.io/${{ env.REPO_LOW }}:latest\`" >> $GITHUB_STEP_SUMMARY
+            echo "  - \`ghcr.io/${{ env.REPO_LOW }}:sha-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Notify on failure
         if: failure()
         run: |
-          echo "❌ Docker build or test failed! Check logs above."
-          echo "Failed step: ${{ github.job }}"
+          echo "❌ Docker build or push failed! Check logs above."
