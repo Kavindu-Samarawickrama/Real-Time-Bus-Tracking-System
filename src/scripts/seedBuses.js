@@ -8,8 +8,6 @@ const logger = require("../utils/logger");
 
 const seedBuses = async () => {
   try {
-    // Connect to database
-    await mongoose.connect(process.env.MONGODB_URI);
     logger.info("Connected to MongoDB for bus seeding");
 
     // Get bus operators for assignment
@@ -20,7 +18,7 @@ const seedBuses = async () => {
 
     if (busOperators.length === 0) {
       logger.error("No active bus operators found. Please seed users first.");
-      return;
+      throw new Error("No active bus operators found");
     }
 
     // Get routes for assignment
@@ -30,13 +28,13 @@ const seedBuses = async () => {
 
     if (routes.length === 0) {
       logger.error("No active routes found. Please seed routes first.");
-      return;
+      throw new Error("No active routes found");
     }
 
     const ntcAdmin = await User.findOne({ role: "ntc_admin" });
     if (!ntcAdmin) {
       logger.error("NTC admin not found. Please seed users first.");
-      return;
+      throw new Error("NTC admin not found");
     }
 
     // Clear existing buses (optional - comment out if you want to keep existing data)
@@ -397,7 +395,6 @@ const seedBuses = async () => {
         },
         operationalDetails: {
           operator: busOperators[0]._id,
-          // No assigned route during maintenance
         },
         status: "maintenance",
         location: {
@@ -488,7 +485,6 @@ const seedBuses = async () => {
         },
         operationalDetails: {
           operator: busOperators[0]._id,
-          // No assigned route - pending approval
         },
         status: "pending_approval",
         location: {
@@ -502,7 +498,7 @@ const seedBuses = async () => {
           },
         },
         maintenance: {
-          currentMileage: 0, // New bus
+          currentMileage: 0,
           fitnessExpiry: new Date(now.getTime() + 365 * daysInMs),
           insuranceExpiry: new Date(now.getTime() + 365 * daysInMs),
           emissionTestExpiry: new Date(now.getTime() + 365 * daysInMs),
@@ -618,15 +614,23 @@ const seedBuses = async () => {
     });
   } catch (error) {
     logger.error("Bus seeding failed:", error);
-  } finally {
-    await mongoose.connection.close();
-    process.exit(0);
+    throw error; // Re-throw to let seedAll handle it
   }
 };
 
 // Run seeding if this file is executed directly
 if (require.main === module) {
-  seedBuses();
+  (async () => {
+    try {
+      await mongoose.connect(process.env.MONGODB_URI);
+      await seedBuses();
+    } catch (error) {
+      logger.error("Failed:", error);
+    } finally {
+      await mongoose.connection.close();
+      process.exit(0);
+    }
+  })();
 }
 
 module.exports = seedBuses;

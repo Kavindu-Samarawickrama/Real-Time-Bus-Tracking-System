@@ -84,7 +84,7 @@ class Server {
 
     // Swagger UI setup
     this.app.use(
-      "/api/docs",
+      "/docs",
       swaggerUi.serve,
       swaggerUi.setup(openapiSpecification)
     );
@@ -96,10 +96,10 @@ class Server {
         message: "NTC Bus Tracking API",
         version: process.env.API_VERSION || "v1",
         endpoints: {
-          api: "/api",
-          health: "/api/health",
-          users: "/api/users",
-          docs: "/api/docs", // Added docs endpoint
+          api: "/",
+          health: "/health",
+          users: "/users",
+          docs: "/docs", // Added docs endpoint
         },
         timestamp: new Date().toISOString(),
       });

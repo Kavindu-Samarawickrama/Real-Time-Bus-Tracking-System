@@ -46,6 +46,10 @@ const corsOptions = {
       "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:8080",
+      "https://nntctransport.site", // Add your domain
+      "http://nntctransport.site", // HTTP version
+      "https://www.nntctransport.site", // www version
+      "http://www.nntctransport.site",
       process.env.FRONTEND_URL,
     ].filter(Boolean);
 

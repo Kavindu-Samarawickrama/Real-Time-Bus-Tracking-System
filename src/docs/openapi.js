@@ -13,7 +13,7 @@ const openapiSpecification = {
   servers: [
     {
       // url: `http://localhost:${process.env.PORT || 3000}/api`,
-      url: `https://27a602eaabab.ngrok-free.app/api`,
+      url: `https://nntctransport.site`,
       description: "Development server",
     },
   ],

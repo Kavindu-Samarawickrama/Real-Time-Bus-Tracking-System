@@ -1,3 +1,4 @@
+// src/seeders/seedUsers.js
 require("dotenv").config();
 const mongoose = require("mongoose");
 const User = require("../models/User");
@@ -5,9 +6,7 @@ const logger = require("../utils/logger");
 
 const seedUsers = async () => {
   try {
-    // Connect to database
-    await mongoose.connect(process.env.MONGODB_URI);
-    logger.info("Connected to MongoDB for seeding");
+    logger.info("Connected to MongoDB for user seeding");
 
     // Clear existing users (optional - comment out if you want to keep existing data)
     await User.deleteMany({});
@@ -104,15 +103,23 @@ const seedUsers = async () => {
     logger.info("User seeding completed successfully");
   } catch (error) {
     logger.error("User seeding failed:", error);
-  } finally {
-    await mongoose.connection.close();
-    process.exit(0);
+    throw error; // Re-throw to let seedAll handle it
   }
 };
 
 // Run seeding if this file is executed directly
 if (require.main === module) {
-  seedUsers();
+  (async () => {
+    try {
+      await mongoose.connect(process.env.MONGODB_URI);
+      await seedUsers();
+    } catch (error) {
+      logger.error("Failed:", error);
+    } finally {
+      await mongoose.connection.close();
+      process.exit(0);
+    }
+  })();
 }
 
 module.exports = seedUsers;
