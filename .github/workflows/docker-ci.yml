@@ -47,6 +47,19 @@ jobs:
           docker push ghcr.io/${{ env.REPO_LOW }}:latest
           docker push ghcr.io/${{ env.REPO_LOW }}:sha-${{ github.sha }}
 
+      - name: Verify Image Push
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          # Wait a bit for GHCR propagation
+          sleep 10
+          # Check if latest exists (simple curl; assumes public package)
+          if curl -s -f "https://ghcr.io/v2/kavindu-samarawickrama/real-time-bus-tracking-system/manifests/latest" > /dev/null; then
+            echo "✅ Image pushed and accessible!"
+          else
+            echo "❌ Push verification failed!"
+            exit 1
+          fi
+
       - name: Notify on failure
         if: failure()
         run: |
