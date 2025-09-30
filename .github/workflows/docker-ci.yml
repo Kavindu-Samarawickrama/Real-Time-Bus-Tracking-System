@@ -31,25 +31,18 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: true  # Push on every branch
+          push: true
           tags: |
             ghcr.io/${{ env.REPO_LOW }}:${{ github.ref_name }}
             ghcr.io/${{ env.REPO_LOW }}:sha-${{ github.sha }}
+            ghcr.io/${{ env.REPO_LOW }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
             NODE_ENV=production
 
-      # Tag as 'latest' only on main branch
-      - name: Tag as latest (main branch only)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          docker buildx imagetools create \
-            ghcr.io/${{ env.REPO_LOW }}:${{ github.ref_name }} \
-            --tag ghcr.io/${{ env.REPO_LOW }}:latest
-
       - name: Verify Image Push
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.event_name == 'push'
         run: |
           sleep 10
           if curl -s -f "https://ghcr.io/v2/${{ env.REPO_LOW }}/manifests/latest" > /dev/null; then
@@ -59,9 +52,9 @@ jobs:
             exit 1
           fi
 
-      # Deploy to AWS EC2 (only on main branch)
+      # Deploy to AWS EC2 on any branch push
       - name: Deploy to AWS EC2
-        # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.event_name == 'push'
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
@@ -81,32 +74,58 @@ jobs:
           # Add EC2 host to known_hosts to avoid prompt
           ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts 2>/dev/null
           
-          # SSH into EC2 and pull the latest Docker image
-          ssh -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_HOST bash -s << EOF
+          # SSH into EC2 and deploy
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USERNAME@$EC2_HOST bash -s << 'ENDSSH'
+            set -e
             echo "🚀 Deploying to EC2..."
             
             # Login to GitHub Container Registry
             echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             
             # Pull the latest image
+            echo "Pulling image: ghcr.io/${REPO_LOW}:latest"
             docker pull ghcr.io/${REPO_LOW}:latest
             
-            # Stop and remove old container (adjust container name as needed)
-            docker stop bus-tracking-app || true
-            docker rm bus-tracking-app || true
+            # Stop and remove old container
+            echo "Stopping old container..."
+            docker stop bus-tracking-app 2>/dev/null || true
+            docker rm bus-tracking-app 2>/dev/null || true
             
-            # Run the new container (customize ports and environment as needed)
+            # Create .env file on EC2 if it doesn't exist
+            if [ ! -f /home/ubuntu/ntc-app/.env ]; then
+              echo "⚠️  Warning: /home/ubuntu/ntc-app/.env not found!"
+              echo "Please create it with required environment variables."
+            fi
+            
+            # Run the new container with environment variables
+            echo "Starting new container..."
             docker run -d \
               --name bus-tracking-app \
               --restart unless-stopped \
               -p 80:3000 \
+              --env-file /home/ubuntu/ntc-app/.env \
+              -v /home/ubuntu/ntc-app/logs:/usr/src/app/logs \
               ghcr.io/${REPO_LOW}:latest
             
+            # Wait for container to start
+            sleep 5
+            
+            # Check if container is running
+            if docker ps | grep -q bus-tracking-app; then
+              echo "✅ Container is running!"
+              docker ps | grep bus-tracking-app
+            else
+              echo "❌ Container failed to start!"
+              docker logs bus-tracking-app
+              exit 1
+            fi
+            
             # Clean up old images
+            echo "Cleaning up old images..."
             docker image prune -af
             
-            echo "✅ Deployment completed!"
-          EOF
+            echo "✅ Deployment completed successfully!"
+          ENDSSH
           
           # Clean up SSH key
           rm -f ec2_key.pem
@@ -118,11 +137,12 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event_name }}" == "push" ]]; then
-            echo "- **Image Tags:**" >> $GITHUB_STEP_SUMMARY
-            echo "  - \`ghcr.io/${{ env.REPO_LOW }}:latest\`" >> $GITHUB_STEP_SUMMARY
-            echo "  - \`ghcr.io/${{ env.REPO_LOW }}:sha-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo "  - \`ghcr.io/${{ env.REPO_LOW }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "  - \`ghcr.io/${{ env.REPO_LOW }}:${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "  - \`ghcr.io/${{ env.REPO_LOW }}:sha-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ github.event_name }}" == "push" ]]; then
             echo "- **Deployed to EC2:** ✅" >> $GITHUB_STEP_SUMMARY
           fi
 
