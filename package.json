@@ -14,7 +14,11 @@
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f ntc-api",
-    "seed": "node src/scripts/seedTrips.js",
+    "seed": "node src/scripts/seedAll.js",
+    "seed:users": "node src/seeders/seedUsers.js",
+    "seed:routes": "node src/seeders/seedRoutes.js",
+    "seed:buses": "node src/seeders/seedBuses.js",
+    "seed:trips": "node src/seeders/seedTrips.js",
     "check-env": "node ./check-env.js"
   },
   "keywords": [

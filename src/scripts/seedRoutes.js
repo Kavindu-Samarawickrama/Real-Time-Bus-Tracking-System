@@ -7,8 +7,6 @@ const logger = require("../utils/logger");
 
 const seedRoutes = async () => {
   try {
-    // Connect to database
-    await mongoose.connect(process.env.MONGODB_URI);
     logger.info("Connected to MongoDB for route seeding");
 
     // Get bus operators for route assignment
@@ -19,13 +17,13 @@ const seedRoutes = async () => {
 
     if (busOperators.length === 0) {
       logger.error("No active bus operators found. Please seed users first.");
-      return;
+      throw new Error("No active bus operators found");
     }
 
     const ntcAdmin = await User.findOne({ role: "ntc_admin" });
     if (!ntcAdmin) {
       logger.error("NTC admin not found. Please seed users first.");
-      return;
+      throw new Error("NTC admin not found");
     }
 
     // Clear existing routes (optional - comment out if you want to keep existing data)
@@ -658,15 +656,23 @@ const seedRoutes = async () => {
     });
   } catch (error) {
     logger.error("Route seeding failed:", error);
-  } finally {
-    await mongoose.connection.close();
-    process.exit(0);
+    throw error; // Re-throw to let seedAll handle it
   }
 };
 
 // Run seeding if this file is executed directly
 if (require.main === module) {
-  seedRoutes();
+  (async () => {
+    try {
+      await mongoose.connect(process.env.MONGODB_URI);
+      await seedRoutes();
+    } catch (error) {
+      logger.error("Failed:", error);
+    } finally {
+      await mongoose.connection.close();
+      process.exit(0);
+    }
+  })();
 }
 
 module.exports = seedRoutes;

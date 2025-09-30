@@ -9,8 +9,6 @@ const logger = require("../utils/logger");
 
 const seedTrips = async () => {
   try {
-    // Connect to database
-    await mongoose.connect(process.env.MONGODB_URI);
     logger.info("Connected to MongoDB for trip seeding");
 
     // Get required data
@@ -27,22 +25,22 @@ const seedTrips = async () => {
 
     if (busOperators.length === 0) {
       logger.error("No active bus operators found. Please seed users first.");
-      return;
+      throw new Error("No active bus operators found");
     }
 
     if (routes.length === 0) {
       logger.error("No active routes found. Please seed routes first.");
-      return;
+      throw new Error("No active routes found");
     }
 
     if (buses.length === 0) {
       logger.error("No active buses found. Please seed buses first.");
-      return;
+      throw new Error("No active buses found");
     }
 
     if (!ntcAdmin) {
       logger.error("NTC admin not found. Please seed users first.");
-      return;
+      throw new Error("NTC admin not found");
     }
 
     // Clear existing trips (optional - comment out if you want to keep existing data)
@@ -73,17 +71,17 @@ const seedTrips = async () => {
     for (let i = 0; i < Math.min(routes.length, buses.length, 25); i++) {
       const route = routes[i % routes.length];
       const bus = buses[i % buses.length];
-      const operator = busOperators[0]; // Using first operator for simplicity
+      const operator = busOperators[0];
 
       // Create trips for the next 7 days
       for (let day = 0; day < 7; day++) {
         // Morning trip
         const morningDeparture = new Date(
           now.getTime() + day * daysInMs + 8 * hoursInMs
-        ); // 8 AM
+        );
         const morningArrival = new Date(
           morningDeparture.getTime() + 3 * hoursInMs
-        ); // 3 hours journey
+        );
 
         const morningTripData = {
           tripNumber: generateTripNumber(morningDeparture, tripIndex++),
@@ -107,8 +105,8 @@ const seedTrips = async () => {
           },
           capacity: {
             totalSeats: bus.capacity?.totalSeats || 50,
-            bookedSeats: Math.floor(Math.random() * 40) + 5, // 5-45 booked seats
-            availableSeats: 0, // Will be calculated by pre-save middleware
+            bookedSeats: Math.floor(Math.random() * 40) + 5,
+            availableSeats: 0,
             standingPassengers: Math.floor(Math.random() * 10),
           },
           status:
@@ -137,11 +135,11 @@ const seedTrips = async () => {
                 }
               : {},
           fare: {
-            baseFare: 250 + Math.floor(Math.random() * 200), // 250-450 LKR
+            baseFare: 250 + Math.floor(Math.random() * 200),
             currency: "LKR",
           },
           revenue: {
-            totalRevenue: 0, // Will be calculated by pre-save middleware
+            totalRevenue: 0,
             ticketsSold: 0,
             averageFare: 0,
             expenses: {
@@ -155,8 +153,8 @@ const seedTrips = async () => {
             conditions: ["clear", "cloudy", "rainy"][
               Math.floor(Math.random() * 3)
             ],
-            temperature: Math.floor(Math.random() * 10) + 25, // 25-35°C
-            visibility: Math.floor(Math.random() * 5) + 8, // 8-12 km
+            temperature: Math.floor(Math.random() * 10) + 25,
+            visibility: Math.floor(Math.random() * 5) + 8,
           },
           metadata: {
             tripType: "regular",
@@ -171,10 +169,9 @@ const seedTrips = async () => {
 
         // Afternoon trip (if not weekend)
         if (day < 5) {
-          // Weekdays only
           const afternoonDeparture = new Date(
             now.getTime() + day * daysInMs + 15 * hoursInMs
-          ); // 3 PM
+          );
           const afternoonArrival = new Date(
             afternoonDeparture.getTime() + 3 * hoursInMs
           );
@@ -376,7 +373,6 @@ const seedTrips = async () => {
       logger.info("Errors encountered:");
       errors.forEach((error, index) => {
         if (index < 5) {
-          // Show only first 5 errors to avoid log spam
           logger.error(`  ${error}`);
         }
       });
@@ -437,19 +433,23 @@ const seedTrips = async () => {
     });
   } catch (error) {
     logger.error("Trip seeding failed:", error);
-    throw error;
-  } finally {
-    await mongoose.connection.close();
-    process.exit(0);
+    throw error; // Re-throw to let seedAll handle it
   }
 };
 
 // Run seeding if this file is executed directly
 if (require.main === module) {
-  seedTrips().catch((error) => {
-    console.error("Seeding process failed:", error);
-    process.exit(1);
-  });
+  (async () => {
+    try {
+      await mongoose.connect(process.env.MONGODB_URI);
+      await seedTrips();
+    } catch (error) {
+      logger.error("Failed:", error);
+    } finally {
+      await mongoose.connection.close();
+      process.exit(0);
+    }
+  })();
 }
 
 module.exports = seedTrips;
